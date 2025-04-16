@@ -1,10 +1,11 @@
 import { Disclosure, Menu } from '@headlessui/react'
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import Link from 'next/link'
 
 const navigation = [
-  { name: 'Signup', href: '#', current: true },
-  { name: 'About', href: '#', current: false },
-  { name: 'Support', href: '#', current: false },
+  { name: 'Products', href: '/', current: false },
+  { name: 'About', href: '/about', current: false },
+  { name: 'Support', href: '/support', current: false },
 ]
 
 function classNames(...classes) {
@@ -31,16 +32,16 @@ export default function Navbar() {
                 </Disclosure.Button>
               </div>
               <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
-                <div className="flex shrink-0 items-center">
+                <Link href="/" className="flex shrink-0 items-center cursor-pointer">
                   <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center">
                     <span className="text-white font-bold text-lg">AI</span>
                   </div>
                   <span className="ml-2 text-xl font-bold text-indigo-600">Hyper AI</span>
-                </div>
+                </Link>
                 <div className="hidden sm:ml-8 sm:block">
                   <div className="flex space-x-4">
                     {navigation.map((item) => (
-                      <a
+                      <Link
                         key={item.name}
                         href={item.href}
                         className={classNames(
@@ -50,7 +51,7 @@ export default function Navbar() {
                         aria-current={item.current ? 'page' : undefined}
                       >
                         {item.name}
-                      </a>
+                      </Link>
                     ))}
                   </div>
                 </div>
@@ -64,8 +65,6 @@ export default function Navbar() {
                   <span className="sr-only">View notifications</span>
                   <BellIcon className="h-6 w-6" aria-hidden="true" />
                 </button>
-
-
               </div>
             </div>
           </div>
@@ -73,9 +72,8 @@ export default function Navbar() {
           <Disclosure.Panel className="sm:hidden">
             <div className="space-y-1 px-2 pb-3 pt-2">
               {navigation.map((item) => (
-                <Disclosure.Button
+                <Link
                   key={item.name}
-                  as="a"
                   href={item.href}
                   className={classNames(
                     item.current ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-600',
@@ -84,7 +82,7 @@ export default function Navbar() {
                   aria-current={item.current ? 'page' : undefined}
                 >
                   {item.name}
-                </Disclosure.Button>
+                </Link>
               ))}
             </div>
           </Disclosure.Panel>

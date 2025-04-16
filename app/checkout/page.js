@@ -18,7 +18,7 @@ const products = [
   {
     id: 1,
     name: 'SaaSApp Enterprise Plan',
-    href: '#',
+    href: '/products',
     price: subtotal,
     tier: 'Annual subscription',
     imageSrc: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80',
@@ -41,7 +41,7 @@ export default function Checkout() {
   useEffect(() => {
     try {
       const savedData = localStorage.getItem('fpData');
-      if (savedData) {
+    if (savedData) {
         setFpData(JSON.parse(savedData));
         // Don't set dataFetched to true here to still allow a fresh fetch
         // But it will prevent the maximum update depth issue
@@ -131,7 +131,7 @@ export default function Checkout() {
                   </ul>
 
                   <form className="mt-10">
-                    <label htmlFor="discount-code-mobile" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="discount-code-mobile" className="block text-sm/6 font-medium text-gray-700">
                       Discount code
                     </label>
                     <div className="mt-2 flex space-x-4">
@@ -236,7 +236,7 @@ export default function Checkout() {
             </div>
 
             <form className="mt-6">
-              <label htmlFor="discount-code" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="discount-code" className="block text-sm/6 font-medium text-gray-700">
                 Discount code
               </label>
               <div className="mt-2 flex space-x-4">
@@ -244,7 +244,7 @@ export default function Checkout() {
                   id="discount-code"
                   name="discount-code"
                   type="text"
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                   placeholder="Enter code"
                 />
                 <button
@@ -318,7 +318,7 @@ export default function Checkout() {
             <form className="mt-6">
               <div className="grid grid-cols-12 gap-x-4 gap-y-6">
                 <div className="col-span-full">
-                  <label htmlFor="email-address" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="email-address" className="block text-sm/6 font-medium text-gray-700">
                     Email address
                   </label>
                   <div className="mt-2">
@@ -327,13 +327,13 @@ export default function Checkout() {
                       name="email-address"
                       type="email"
                       autoComplete="email"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                     />
                   </div>
                 </div>
 
                 <div className="col-span-full">
-                  <label htmlFor="name-on-card" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="name-on-card" className="block text-sm/6 font-medium text-gray-700">
                     Name on card
                   </label>
                   <div className="mt-2">
@@ -342,13 +342,13 @@ export default function Checkout() {
                       name="name-on-card"
                       type="text"
                       autoComplete="cc-name"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                     />
                   </div>
                 </div>
 
                 <div className="col-span-full">
-                  <label htmlFor="card-number" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="card-number" className="block text-sm/6 font-medium text-gray-700">
                     Card number
                   </label>
                   <div className="mt-2">
@@ -357,13 +357,13 @@ export default function Checkout() {
                       name="card-number"
                       type="text"
                       autoComplete="cc-number"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                     />
                   </div>
                 </div>
 
                 <div className="col-span-8 sm:col-span-9">
-                  <label htmlFor="expiration-date" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="expiration-date" className="block text-sm/6 font-medium text-gray-700">
                     Expiration date (MM/YY)
                   </label>
                   <div className="mt-2">
@@ -372,13 +372,13 @@ export default function Checkout() {
                       name="expiration-date"
                       type="text"
                       autoComplete="cc-exp"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                     />
                   </div>
                 </div>
 
                 <div className="col-span-4 sm:col-span-3">
-                  <label htmlFor="cvc" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="cvc" className="block text-sm/6 font-medium text-gray-700">
                     CVC
                   </label>
                   <div className="mt-2">
@@ -387,13 +387,13 @@ export default function Checkout() {
                       name="cvc"
                       type="text"
                       autoComplete="csc"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                     />
                   </div>
                 </div>
 
                 <div className="col-span-full">
-                  <label htmlFor="address" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="address" className="block text-sm/6 font-medium text-gray-700">
                     Address
                   </label>
                   <div className="mt-2">
@@ -402,13 +402,13 @@ export default function Checkout() {
                       name="address"
                       type="text"
                       autoComplete="street-address"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                     />
                   </div>
                 </div>
 
                 <div className="col-span-full sm:col-span-4">
-                  <label htmlFor="city" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="city" className="block text-sm/6 font-medium text-gray-700">
                     City
                   </label>
                   <div className="mt-2">
@@ -417,13 +417,13 @@ export default function Checkout() {
                       name="city"
                       type="text"
                       autoComplete="address-level2"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                     />
                   </div>
                 </div>
 
                 <div className="col-span-full sm:col-span-4">
-                  <label htmlFor="region" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="region" className="block text-sm/6 font-medium text-gray-700">
                     State / Province
                   </label>
                   <div className="mt-2">
@@ -432,13 +432,13 @@ export default function Checkout() {
                       name="region"
                       type="text"
                       autoComplete="address-level1"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                     />
                   </div>
                 </div>
 
                 <div className="col-span-full sm:col-span-4">
-                  <label htmlFor="postal-code" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="postal-code" className="block text-sm/6 font-medium text-gray-700">
                     Postal code
                   </label>
                   <div className="mt-2">
@@ -447,21 +447,43 @@ export default function Checkout() {
                       name="postal-code"
                       type="text"
                       autoComplete="postal-code"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                     />
                   </div>
                 </div>
               </div>
 
               <div className="mt-6 flex gap-3">
-                <div className="flex h-5 items-center">
-                  <input
-                    id="same-as-shipping"
-                    name="same-as-shipping"
-                    type="checkbox"
-                    defaultChecked
-                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                  />
+                <div className="flex h-5 shrink-0 items-center">
+                  <div className="group grid size-4 grid-cols-1">
+                    <input
+                      defaultChecked
+                      id="same-as-shipping"
+                      name="same-as-shipping"
+                      type="checkbox"
+                      className="col-start-1 row-start-1 appearance-none rounded border border-gray-300 bg-white checked:border-indigo-600 checked:bg-indigo-600 indeterminate:border-indigo-600 indeterminate:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:border-gray-300 disabled:bg-gray-100 disabled:checked:bg-gray-100 forced-colors:appearance-auto"
+                    />
+                    <svg
+                      fill="none"
+                      viewBox="0 0 14 14"
+                      className="pointer-events-none col-start-1 row-start-1 size-3.5 self-center justify-self-center stroke-white group-has-[:disabled]:stroke-gray-950/25"
+                    >
+                      <path
+                        d="M3 8L6 11L11 3.5"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="opacity-0 group-has-[:checked]:opacity-100"
+                      />
+                      <path
+                        d="M3 7H11"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="opacity-0 group-has-[:indeterminate]:opacity-100"
+                      />
+                    </svg>
+                  </div>
                 </div>
                 <label htmlFor="same-as-shipping" className="text-sm font-medium text-gray-900">
                   Billing address is the same as shipping address
