@@ -1,5 +1,5 @@
 import { Disclosure } from '@headlessui/react'
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
+import { Bars3Icon, XMarkIcon, ShoppingCartIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 
 const navigation = [
@@ -60,8 +60,10 @@ export default function Navbar() {
                 {/* User account link - can be linked to a login page */}
                 <Link 
                   href="/checkout"
-                  className="relative rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  className="relative rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex items-center"
                 >
+                  <ShoppingCartIcon className="h-4 w-4 mr-1.5" aria-hidden="true" />
+                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 flex items-center justify-center text-xs text-white">1</span>
                   Checkout
                 </Link>
               </div>
