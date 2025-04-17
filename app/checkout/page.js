@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Disclosure } from '@headlessui/react';
 import { LockClosedIcon } from '@heroicons/react/20/solid';
-import { useVisitorData } from '@fingerprintjs/fingerprintjs-pro-react';
 import Navbar from '../components/Navbar';
 
 // Mock data for checkout
@@ -30,64 +29,117 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
+/**
+ * Client-side fingerprint component
+ */
+function useFingerprintData(onDataReceived) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  useEffect(() => {
+    let isMounted = true;
+    
+    const getFingerprintData = async () => {
+      try {
+        // Check if window.fpAgent exists (set in layout.js)
+        if (typeof window !== 'undefined' && window.fpAgent) {
+          const result = await window.fpAgent.get({
+            ignoreCache: true,
+            extendedResult: true
+          });
+          
+          if (isMounted) {
+            onDataReceived(result);
+            setIsLoading(false);
+          }
+        } else {
+          // Wait for agent to be available
+          setTimeout(getFingerprintData, 500);
+        }
+      } catch (err) {
+        console.error('Error getting fingerprint data:', err);
+        if (isMounted) {
+          setError(err);
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    getFingerprintData();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [onDataReceived]);
+  
+  return { isLoading, error };
+}
+
 export default function Checkout() {
   const [fpData, setFpData] = useState(null);
-  const { getData } = useVisitorData();
   const [latency, setLatency] = useState(null);
-  const isMounted = useRef(true);
-  const dataFetched = useRef(false);
-
+  const startTimeRef = useRef(null);
+  
   // Load saved data on first render
   useEffect(() => {
     try {
       const savedData = localStorage.getItem('fpData');
-    if (savedData) {
+      if (savedData) {
         setFpData(JSON.parse(savedData));
-        // Don't set dataFetched to true here to still allow a fresh fetch
-        // But it will prevent the maximum update depth issue
       }
+      startTimeRef.current = Date.now();
     } catch (error) {
       console.error('Error loading saved fingerprint data:', error);
     }
   }, []);
-
-  useEffect(() => {
-    // Set up the isMounted ref for cleanup
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    // Only fetch data if it hasn't been fetched yet
-    if (dataFetched.current) return;
+  
+  const handleFingerprintData = useRef((data) => {
+    setFpData(data);
+    if (startTimeRef.current) {
+      setLatency(Date.now() - startTimeRef.current);
+    }
     
-    // Run send endpoint to get visitor ID
-    const getVisitorId = async () => {
-      const startTime = Date.now(); // Use local variable instead of state
-      dataFetched.current = true; // Mark as fetched before the async operation
-      
-      try {
-        const result = await getData({
-          ignoreCache: true,
-          extendedResult: true
-        });
-        
-        // Only update state if component is still mounted
-        if (isMounted.current) {
-          setLatency(Date.now() - startTime);
-          setFpData(result);
-          
-          // Store fingerprint data in localStorage for persistence
-          localStorage.setItem('fpData', JSON.stringify(result));
-        }
-      } catch (error) {
-        console.error('Error getting visitor ID:', error);
-      }
-    };
+    // Store fingerprint data in localStorage for persistence
+    localStorage.setItem('fpData', JSON.stringify(data));
+  }).current;
+  
+  // Use our client hook to get fingerprint data
+  const { isLoading, error } = useFingerprintData(handleFingerprintData);
 
-    getVisitorId();
-  }, [getData]); // Remove latencyStart from dependencies
+  // Add error display in the summary section
+  const renderFingerprint = () => {
+    if (error) {
+      return (
+        <div className="rounded-md bg-red-50 p-4 mb-4">
+          <div className="flex">
+            <div className="ml-3 flex-1">
+              <p className="text-sm text-red-700">
+                <span className="font-medium">Error:</span>{' '}
+                <span className="font-mono text-xs break-all">
+                  {error.message || 'Failed to load fingerprint data'}
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="rounded-md bg-indigo-50 p-4 mb-4">
+        <div className="flex">
+          <div className="ml-3 flex-1 md:flex md:justify-between">
+            <p className="text-sm text-indigo-700">
+              <span className="font-medium">Fingerprint ID:</span>{' '}
+              <span className="font-mono text-xs break-all">
+                {isLoading ? 'Loading...' : fpData?.visitorId || 'Not available'}
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -211,18 +263,7 @@ export default function Checkout() {
 
           <div className="sticky bottom-0 flex-none border-t border-gray-200 bg-gray-50 p-6">
             <div className="mt-4">
-              <div className="rounded-md bg-indigo-50 p-4 mb-4">
-                <div className="flex">
-                  <div className="ml-3 flex-1 md:flex md:justify-between">
-                    <p className="text-sm text-indigo-700">
-                      <span className="font-medium">Fingerprint ID:</span>{' '}
-                      <span className="font-mono text-xs break-all">
-                        {fpData?.visitorId || 'Loading...'}
-                      </span>
-                    </p>
-                  </div>
-                </div>
-              </div>
+              {renderFingerprint()}
               <div className="rounded-md bg-green-50 p-4">
                 <div className="flex">
                   <div className="ml-3 flex-1 md:flex md:justify-between">
