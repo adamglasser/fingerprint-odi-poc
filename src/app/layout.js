@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import dynamic from "next/dynamic";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -10,6 +11,12 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+// Dynamically import the client component with no SSR
+const FingerprintProviderClient = dynamic(
+  () => import("./components/FingerprintProvider"),
+  { ssr: false }
+);
 
 export const metadata = {
   title: "Create Next App",
@@ -22,7 +29,9 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <FingerprintProviderClient>
+          {children}
+        </FingerprintProviderClient>
       </body>
     </html>
   );

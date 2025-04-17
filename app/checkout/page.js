@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Disclosure } from '@headlessui/react';
 import { LockClosedIcon } from '@heroicons/react/20/solid';
 import Navbar from '../components/Navbar';
+import { useVisitorData } from '@fingerprintjs/fingerprintjs-pro-react';
+import Image from 'next/image';
 
 // Mock data for checkout
 const subtotal = '$99.00';
@@ -16,12 +18,12 @@ const total = '$97.90';
 const products = [
   {
     id: 1,
-    name: 'SaaSApp Enterprise Plan',
+    name: 'Hyper AI Plan',
     href: '/products',
     price: subtotal,
     tier: 'Annual subscription',
-    imageSrc: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80',
-    imageAlt: 'SaaSApp Enterprise Plan subscription.',
+    imageSrc: '/hyper-ai-logo.png',
+    imageAlt: 'Hyper AI Plan subscription.',
   },
 ];
 
@@ -29,97 +31,58 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
-/**
- * Custom hook for retrieving fingerprint data
- */
-function useFingerprintData(onDataReceived) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const retryCount = useRef(0);
-  const MAX_RETRIES = 5;
-  
-  useEffect(() => {
-    let isMounted = true;
-    let retryTimeout = null;
-    
-    const getFingerprintData = async () => {
-      try {
-        // Check if window.fpAgent exists (set in layout.js)
-        if (typeof window !== 'undefined' && window.fpAgent) {
-          const result = await window.fpAgent.get({
-            ignoreCache: true,
-            extendedResult: true
-          });
-          
-          if (isMounted) {
-            onDataReceived(result);
-            setIsLoading(false);
-          }
-        } else {
-          // Increment retry count
-          retryCount.current += 1;
-          
-          // Stop retrying after MAX_RETRIES
-          if (retryCount.current > MAX_RETRIES) {
-            throw new Error('Fingerprint agent not available after multiple retries');
-          }
-          
-          // Wait for agent to be available with exponential backoff
-          const delay = Math.min(1000 * Math.pow(1.5, retryCount.current - 1), 5000);
-          retryTimeout = setTimeout(getFingerprintData, delay);
-        }
-      } catch (err) {
-        console.error('Error getting fingerprint data:', err);
-        if (isMounted) {
-          setError(err);
-          setIsLoading(false);
-        }
-      }
-    };
-    
-    getFingerprintData();
-    
-    return () => {
-      isMounted = false;
-      if (retryTimeout) {
-        clearTimeout(retryTimeout);
-      }
-    };
-  }, [onDataReceived]);
-  
-  return { isLoading, error };
-}
-
 export default function Checkout() {
-  const [fpData, setFpData] = useState(null);
   const [latency, setLatency] = useState(null);
   const startTimeRef = useRef(Date.now());
   
-  // Load saved data on first render
+  // Use the Fingerprint hook to get visitor data
+  const {
+    isLoading,
+    error,
+    data: fpData,
+  } = useVisitorData(
+    { 
+      extendedResult: true,
+      ignoreCache: true
+    },
+    { immediate: true }
+  );
+  
+  // Store in localStorage and calculate latency when data is received
   useEffect(() => {
-    try {
-      const savedData = localStorage.getItem('fpData');
-      if (savedData) {
-        setFpData(JSON.parse(savedData));
+    if (fpData && !isLoading) {
+      setLatency(Date.now() - startTimeRef.current);
+      
+      // Store fingerprint data in localStorage for persistence
+      try {
+        localStorage.setItem('fpData', JSON.stringify(fpData));
+      } catch (error) {
+        console.error('Error storing fingerprint data:', error);
       }
-    } catch (error) {
-      console.error('Error loading saved fingerprint data:', error);
     }
-  }, []);
+  }, [fpData, isLoading]);
   
-  const handleFingerprintData = useRef((data) => {
-    setFpData(data);
-    setLatency(Date.now() - startTimeRef.current);
-    
-    // Store fingerprint data in localStorage for persistence
-    localStorage.setItem('fpData', JSON.stringify(data));
-  }).current;
-  
-  // Use our client hook to get fingerprint data
-  const { isLoading, error } = useFingerprintData(handleFingerprintData);
-
   // Add error display in the summary section
   const renderFingerprint = () => {
+    // Check if Fingerprint is in loading state
+    if (isLoading) {
+      return (
+        <div className="rounded-md bg-blue-50 p-4 mb-4">
+          <div className="flex">
+            <div className="ml-3 flex-1">
+              <p className="text-sm text-blue-700">
+                <span className="font-medium">Loading...</span>{' '}
+                <span className="font-mono text-xs break-all">
+                  Getting fingerprint data
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    // Check for errors
     if (error) {
       return (
         <div className="rounded-md bg-red-50 p-4 mb-4">
@@ -137,6 +100,7 @@ export default function Checkout() {
       );
     }
 
+    // Show the fingerprint data
     return (
       <div className="rounded-md bg-indigo-50 p-4 mb-4">
         <div className="flex">
@@ -144,7 +108,7 @@ export default function Checkout() {
             <p className="text-sm text-indigo-700">
               <span className="font-medium">Fingerprint ID:</span>{' '}
               <span className="font-mono text-xs break-all">
-                {isLoading ? 'Loading...' : fpData?.visitorId || 'Not available'}
+                {fpData?.visitorId || 'Not available'}
               </span>
             </p>
           </div>
@@ -178,11 +142,15 @@ export default function Checkout() {
                   <ul role="list" className="divide-y divide-gray-200 border-b border-gray-200">
                     {products.map((product) => (
                       <li key={product.id} className="flex space-x-6 py-6">
-                        <img
-                          alt={product.imageAlt}
-                          src={product.imageSrc}
-                          className="h-20 w-20 flex-none rounded-md bg-gray-200 object-cover object-center"
-                        />
+                        <div className="h-20 w-20 flex-none relative rounded-md bg-gray-200 overflow-hidden">
+                          <Image
+                            src={product.imageSrc}
+                            alt={product.imageAlt}
+                            fill
+                            style={{ objectFit: 'contain' }}
+                            priority
+                          />
+                        </div>
                         <div className="flex flex-col justify-between space-y-4">
                           <div className="space-y-1 text-sm font-medium">
                             <h3 className="text-gray-900">{product.name}</h3>
@@ -257,11 +225,15 @@ export default function Checkout() {
           <ul role="list" className="flex-auto divide-y divide-gray-200 overflow-y-auto px-6">
             {products.map((product) => (
               <li key={product.id} className="flex space-x-6 py-6">
-                <img
-                  alt={product.imageAlt}
-                  src={product.imageSrc}
-                  className="h-20 w-20 flex-none rounded-md bg-gray-200 object-cover object-center"
-                />
+                <div className="h-20 w-20 flex-none relative rounded-md bg-gray-200 overflow-hidden">
+                  <Image
+                    src={product.imageSrc}
+                    alt={product.imageAlt}
+                    fill
+                    style={{ objectFit: 'contain' }}
+                    priority
+                  />
+                </div>
                 <div className="flex flex-col justify-between space-y-4">
                   <div className="space-y-1 text-sm font-medium">
                     <h3 className="text-gray-900">{product.name}</h3>
