@@ -10,7 +10,6 @@ const inter = Inter({ subsets: ['latin'] })
 // Create a client component for FPJS to prevent SSR issues
 function FingerprintWrapper({ children }) {
   const [fpjsModule, setFpjsModule] = useState(null);
-  const [fpjsAgent, setFpjsAgent] = useState(null);
 
   useEffect(() => {
     async function loadFPJS() {
@@ -35,8 +34,6 @@ function FingerprintWrapper({ children }) {
         if (typeof window !== 'undefined') {
           window.fpAgent = agent;
         }
-        
-        setFpjsAgent(agent);
       } catch (error) {
         console.error('Error loading Fingerprint:', error)
       }
