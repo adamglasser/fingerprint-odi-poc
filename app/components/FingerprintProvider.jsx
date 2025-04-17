@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { FpjsProvider } from '@fingerprintjs/fingerprintjs-pro-react';
+// See https://dev.fingerprint.com/docs/js-agent-static#installation for more information
 import * as FingerprintJS from '@fingerprintjs/fingerprintjs-pro-static';
 
 export default function FingerprintProvider({ children }) {
@@ -17,7 +18,6 @@ export default function FingerprintProvider({ children }) {
     return children;
   }
 
-  // See https://dev.fingerprint.com/docs/js-agent-static#installation for more information
   return (
     <FpjsProvider
       loadOptions={{
@@ -35,3 +35,4 @@ export default function FingerprintProvider({ children }) {
     </FpjsProvider>
   );
 } 
+
