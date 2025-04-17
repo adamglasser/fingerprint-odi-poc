@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, createContext, useContext } from 'react';
+import { useEffect, useState, createContext, useContext, useRef } from 'react';
 // See https://dev.fingerprint.com/docs/js-agent-static#installation for more information
 import * as FingerprintJS from '@fingerprintjs/fingerprintjs-pro-static';
 
@@ -8,6 +8,7 @@ import * as FingerprintJS from '@fingerprintjs/fingerprintjs-pro-static';
 const defaultContextValue = {
   collectBrowserData: async () => null,
   sendToBackend: async () => null,
+  completeIdentification: async () => null,
   latency: null,
   visitorId: null,
   isLoading: false,
@@ -17,6 +18,10 @@ const defaultContextValue = {
   browserData: null,
   backendData: null,
   backendLatency: null,
+  storageLatency: null,
+  identificationLatency: null,
+  resetEnvironment: () => null,
+  registerResetCallback: () => () => {}, // Returns unregister function
 };
 
 // Create a context to share Fingerprint functionality across components
@@ -37,6 +42,11 @@ export default function FingerprintProvider({ children }) {
   const [browserData, setBrowserData] = useState(null);
   const [backendData, setBackendData] = useState(null); 
   const [backendLatency, setBackendLatency] = useState(null);
+  const [storageLatency, setStorageLatency] = useState(null); // Add storage latency tracking
+  const [identificationLatency, setIdentificationLatency] = useState(null); // Add identification latency tracking
+  
+  // Keep track of reset callbacks
+  const resetCallbacksRef = useRef([]);
 
   // Initialize the Fingerprint agent once on the client side and start collection
   useEffect(() => {
@@ -50,6 +60,7 @@ export default function FingerprintProvider({ children }) {
           const fp = await FingerprintJS.load({
             apiKey: process.env.NEXT_PUBLIC_FINGERPRINT_PUBLIC_API_KEY || "A5dUKxfbZOeQQ4vEU4AA",
             region: "us",
+            // Do NOT modify the modules array as all are required for ODI to work
             modules: [
               FingerprintJS.makeIdentificationModule(),
               FingerprintJS.makeBotdModule(),
@@ -92,6 +103,8 @@ export default function FingerprintProvider({ children }) {
       const storedLatency = sessionStorage.getItem('fpCollectLatency');
       const storedPhase = sessionStorage.getItem('fpProcessingPhase');
       const storedBackendLatency = sessionStorage.getItem('fpBackendLatency');
+      const storedStorageLatency = sessionStorage.getItem('fpStorageLatency');
+      const storedIdentificationLatency = sessionStorage.getItem('fpIdentificationLatency');
       const storedVisitorId = sessionStorage.getItem('fpVisitorId');
       
       if (storedBrowserData) {
@@ -99,19 +112,28 @@ export default function FingerprintProvider({ children }) {
         if (storedLatency) setLatency(parseFloat(storedLatency));
         if (storedPhase) setProcessingPhase(storedPhase);
         if (storedBackendLatency) setBackendLatency(parseFloat(storedBackendLatency));
+        if (storedStorageLatency) setStorageLatency(parseFloat(storedStorageLatency));
+        if (storedIdentificationLatency) setIdentificationLatency(parseFloat(storedIdentificationLatency));
         if (storedVisitorId) setVisitorId(storedVisitorId);
       } else {
         loadFpAndCollect();
       }
+
+      // Expose the loadFpAndCollect function for reset
+      window.fpLoadAndCollect = loadFpAndCollect;
     }
   }, []);
 
-  // Function to collect browser data (if needed again)
+  // Function to collect browser data
   const collectBrowserData = async () => {
     if (!fpInstance) return null;
     
     setIsLoading(true);
     setProcessingPhase('collecting');
+    // Reset latency values to ensure we only measure actual processing time
+    setLatency(null);
+    setBackendLatency(null);
+    
     const startTime = performance.now();
     
     try {
@@ -152,9 +174,11 @@ export default function FingerprintProvider({ children }) {
     
     try {
       setProcessingPhase('sending');
+      
       const startTime = performance.now();
       
-      const response = await fetch('/api/fingerprint', {
+      // Send to our backend API but don't call /send endpoint yet
+      const response = await fetch('/api/collect-fingerprint', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -169,24 +193,19 @@ export default function FingerprintProvider({ children }) {
       const data = await response.json();
       const sendLatency = performance.now() - startTime;
       
-      // Handle the agent data from the response
-      if (data.agentData && fpInstance) {
-        await FingerprintJS.handleAgentData(data.agentData);
-      }
-      
+      // Store the backend response, but don't complete identification yet
       setBackendData(data);
-      setBackendLatency(data.backendLatency || sendLatency);
-      setProcessingPhase('complete');
+      setStorageLatency(sendLatency); // Store storage latency separately
+      setBackendLatency(sendLatency); // Total backend latency starts with storage
+      setProcessingPhase('stored');
       
-      if (data.visitorId) {
-        setVisitorId(data.visitorId);
-        try {
-          sessionStorage.setItem('fpVisitorId', data.visitorId);
-          sessionStorage.setItem('fpBackendLatency', data.backendLatency.toString());
-          sessionStorage.setItem('fpProcessingPhase', 'complete');
-        } catch (err) {
-          console.error('Error storing in sessionStorage:', err);
-        }
+      // Store in sessionStorage
+      try {
+        sessionStorage.setItem('fpStorageLatency', sendLatency.toString());
+        sessionStorage.setItem('fpBackendLatency', sendLatency.toString());
+        sessionStorage.setItem('fpProcessingPhase', 'stored');
+      } catch (err) {
+        console.error('Error storing in sessionStorage:', err);
       }
       
       return data;
@@ -198,10 +217,142 @@ export default function FingerprintProvider({ children }) {
     }
   };
 
+  // Function to complete identification by calling /send endpoint and handling agent data
+  const completeIdentification = async () => {
+    if (!backendData) {
+      console.error("No backend data available to complete identification");
+      return null;
+    }
+    
+    try {
+      setProcessingPhase('identifying');
+      
+      const startTime = performance.now();
+      
+      // Now call the endpoint that triggers Fingerprint's /send endpoint
+      const response = await fetch('/api/fingerprint', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ backendData }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Identification request failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const identifyLatency = performance.now() - startTime;
+      
+      // Handle the agent data from the response
+      if (data.agentData && fpInstance) {
+        await FingerprintJS.handleAgentData(data.agentData);
+      }
+      
+      // Update our state with the complete identification data
+      setBackendData({
+        ...data,
+        storageLatency: storageLatency || 0  // Include storage latency in the data
+      });
+      setIdentificationLatency(identifyLatency); // Store identification latency separately
+      setBackendLatency((storageLatency || 0) + identifyLatency); // Update total backend latency
+      setProcessingPhase('complete');
+      
+      if (data.visitorId) {
+        setVisitorId(data.visitorId);
+        try {
+          sessionStorage.setItem('fpVisitorId', data.visitorId);
+          sessionStorage.setItem('fpIdentificationLatency', identifyLatency.toString());
+          sessionStorage.setItem('fpBackendLatency', ((storageLatency || 0) + identifyLatency).toString());
+          sessionStorage.setItem('fpProcessingPhase', 'complete');
+        } catch (err) {
+          console.error('Error storing in sessionStorage:', err);
+        }
+      }
+      
+      return data;
+    } catch (err) {
+      console.error("Error completing identification:", err);
+      setError(err);
+      setProcessingPhase('error');
+      return null;
+    }
+  };
+
+  // Function to register callbacks for reset events
+  const registerResetCallback = (callback) => {
+    if (typeof callback === 'function') {
+      resetCallbacksRef.current.push(callback);
+      
+      // Return a function to unregister this callback
+      return () => {
+        resetCallbacksRef.current = resetCallbacksRef.current.filter(cb => cb !== callback);
+      };
+    }
+    return () => {}; // Return empty function if invalid callback
+  };
+
+  // Function to reset the environment
+  const resetEnvironment = () => {
+    // Clear Fingerprint cookies
+    if (typeof document !== 'undefined') {
+      // Delete _iidt cookie by setting expiration in the past
+      document.cookie = '_iidt=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax;';
+      
+      // Delete any additional Fingerprint cookies that might exist
+      document.cookie = '_vid_t=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax;';
+      document.cookie = '_dd_s=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax;';
+    }
+    
+    // Clear session storage
+    try {
+      sessionStorage.removeItem('fpBrowserData');
+      sessionStorage.removeItem('fpCollectLatency');
+      sessionStorage.removeItem('fpProcessingPhase');
+      sessionStorage.removeItem('fpBackendLatency');
+      sessionStorage.removeItem('fpStorageLatency');
+      sessionStorage.removeItem('fpIdentificationLatency');
+      sessionStorage.removeItem('fpVisitorId');
+    } catch (err) {
+      console.error('Error clearing sessionStorage:', err);
+    }
+    
+    // Reset state
+    setLatency(null);
+    setVisitorId(null);
+    setError(null);
+    setProcessingPhase('initial');
+    setBrowserData(null);
+    setBackendData(null);
+    setBackendLatency(null);
+    setStorageLatency(null);
+    setIdentificationLatency(null);
+    
+    // Notify subscribers about the reset
+    resetCallbacksRef.current.forEach(callback => {
+      try {
+        callback();
+      } catch (err) {
+        console.error('Error executing reset callback:', err);
+      }
+    });
+    
+    // Reload Fingerprint instance and collect data
+    if (fpInstance) {
+      // Collect new data
+      collectBrowserData();
+    } else if (window.fpLoadAndCollect) {
+      // If no instance but we have the loader function
+      window.fpLoadAndCollect();
+    }
+  };
+
   // Create context value
   const contextValue = isMounted ? {
     collectBrowserData,
     sendToBackend,
+    completeIdentification,
     latency,
     visitorId,
     isLoading,
@@ -211,6 +362,10 @@ export default function FingerprintProvider({ children }) {
     browserData,
     backendData,
     backendLatency,
+    storageLatency,
+    identificationLatency,
+    resetEnvironment,
+    registerResetCallback,
   } : defaultContextValue;
 
   return (

@@ -1,6 +1,7 @@
 import { Disclosure } from '@headlessui/react'
-import { Bars3Icon, XMarkIcon, ShoppingCartIcon } from '@heroicons/react/24/outline'
+import { Bars3Icon, XMarkIcon, ShoppingCartIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
+import { useFingerprintODI } from './FingerprintProvider'
 
 const navigation = [
   { name: 'Products', href: '/', current: false },
@@ -13,6 +14,14 @@ function classNames(...classes) {
 }
 
 export default function Navbar() {
+  const { resetEnvironment } = useFingerprintODI();
+
+  const handleResetEnvironment = () => {
+    resetEnvironment();
+    // More specific feedback for the user
+    alert('Environment reset completed! Fingerprint cookies cleared, latency reset, and new identification process started.');
+  };
+
   return (
     <Disclosure as="nav" className="bg-white shadow-md">
       {({ open }) => (
@@ -57,6 +66,16 @@ export default function Navbar() {
                 </div>
               </div>
               <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
+                {/* Reset Environment Button */}
+                <button
+                  onClick={handleResetEnvironment}
+                  className="mr-3 rounded-md bg-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 flex items-center"
+                  title="Reset Environment"
+                >
+                  <ArrowPathIcon className="h-4 w-4 mr-1.5" aria-hidden="true" />
+                  Reset
+                </button>
+                
                 {/* User account link - can be linked to a login page */}
                 <Link 
                   href="/checkout"
@@ -85,6 +104,14 @@ export default function Navbar() {
                   {item.name}
                 </Link>
               ))}
+              
+              {/* Mobile Reset Environment Button */}
+              <button
+                onClick={handleResetEnvironment}
+                className="w-full text-left text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 block rounded-md px-3 py-2 text-base font-medium"
+              >
+                Reset Environment
+              </button>
             </div>
           </Disclosure.Panel>
         </>

@@ -1,10 +1,32 @@
 'use client';
 
+import { useEffect } from 'react';
 import ProductShowcase from './components/ProductShowcase'
 import Navbar from './components/Navbar'
 import LatencyMetrics from './components/LatencyMetrics'
+import { useFingerprintODI } from './components/FingerprintProvider'
 
 export default function Home() {
+  // Get the browser data and sendToBackend function from context
+  const { 
+    browserData,
+    backendData,
+    processingPhase,
+    sendToBackend
+  } = useFingerprintODI();
+  
+  // Automatically send browser data to backend when it's available
+  useEffect(() => {
+    const sendData = async () => {
+      // If we have browser data but no backend data yet, and we're in processing phase
+      if (browserData && processingPhase === 'processing' && !backendData) {
+        await sendToBackend(browserData);
+      }
+    };
+    
+    sendData();
+  }, [browserData, processingPhase, backendData, sendToBackend]);
+  
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />

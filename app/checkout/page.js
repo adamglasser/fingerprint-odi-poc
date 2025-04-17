@@ -40,30 +40,60 @@ export default function Checkout() {
   // Use the Fingerprint context
   const {
     sendToBackend,
+    completeIdentification,
     visitorId,
     browserData,
     backendData,
     processingPhase,
+    registerResetCallback,
   } = useFingerprintODI();
   
-  // Send browser data to backend when checkout page loads
+  // Register a callback to reset the identification status when environment is reset
   useEffect(() => {
-    const processFingerprint = async () => {
-      // Only send to backend if we already have browser data from collection
-      // and we haven't already completed processing
-      if (browserData && processingPhase === 'processing') {
-        const response = await sendToBackend(browserData);
+    // Only register if the function exists (it may not in SSR or if context isn't ready)
+    if (registerResetCallback) {
+      const unregister = registerResetCallback(() => {
+        setShowIdentificationComplete(false);
+        setPaymentVerified(false);
+      });
+      
+      // Clean up on component unmount
+      return unregister;
+    }
+  }, [registerResetCallback]);
+  
+  // Perform the full identification flow on the checkout page
+  useEffect(() => {
+    const processIdentification = async () => {
+      // If we don't have backend data yet, we need to send browser data first
+      if (browserData && (!backendData || processingPhase === 'processing')) {
+        // Send browser data to our backend
+        const backendResponse = await sendToBackend(browserData);
+        
+        if (backendResponse) {
+          // Now complete the identification with Fingerprint
+          const identificationResponse = await completeIdentification();
+          if (identificationResponse) {
+            setShowIdentificationComplete(true);
+          }
+        }
+      } 
+      // If we already have backend data but identification isn't complete
+      else if (backendData && (processingPhase === 'stored' || processingPhase === 'sending')) {
+        // Just complete the identification
+        const response = await completeIdentification();
         if (response) {
           setShowIdentificationComplete(true);
         }
-      } else if (processingPhase === 'complete') {
-        // Already processed
+      }
+      // If identification is already complete
+      else if (processingPhase === 'complete') {
         setShowIdentificationComplete(true);
       }
     };
     
-    processFingerprint();
-  }, [browserData, processingPhase, sendToBackend]);
+    processIdentification();
+  }, [browserData, backendData, processingPhase, sendToBackend, completeIdentification]);
   
   // Handle payment form submission
   const handlePaymentSubmit = (e) => {
@@ -253,7 +283,7 @@ export default function Checkout() {
                       <p className="text-sm text-green-700">
                         <span className="font-medium">Payment verified</span>{' '}
                         <span className="font-mono text-xs">
-                          Your order is ready to be processed
+                          Your order was processed successfully.
                         </span>
                       </p>
                     </div>
