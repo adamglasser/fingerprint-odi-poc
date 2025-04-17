@@ -1,6 +1,6 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
-import FingerprintWrapper from './components/FingerprintWrapper'
+import FingerprintProvider from './components/FingerprintProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -13,11 +13,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <FingerprintWrapper>
+        <FingerprintProvider>
           <main className="min-h-screen bg-gray-50">
             {children}
           </main>
-        </FingerprintWrapper>
+        </FingerprintProvider>
       </body>
     </html>
   )

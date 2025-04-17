@@ -2,6 +2,7 @@
 
 import ProductShowcase from './components/ProductShowcase'
 import Navbar from './components/Navbar'
+import LatencyMetrics from './components/LatencyMetrics'
 
 export default function Home() {
   return (
@@ -9,6 +10,12 @@ export default function Home() {
       <Navbar />
       
       <main className="flex-grow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="bg-white shadow rounded-lg p-6 mb-6">
+            <h2 className="text-lg font-medium mb-4">Fingerprint Browser Collection Metrics</h2>
+            <LatencyMetrics />
+          </div>
+        </div>
         <ProductShowcase />
       </main>
       

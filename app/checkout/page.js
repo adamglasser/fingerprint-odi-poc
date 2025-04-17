@@ -4,8 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import { Disclosure } from '@headlessui/react';
 import { LockClosedIcon } from '@heroicons/react/20/solid';
 import Navbar from '../components/Navbar';
-import { useVisitorData } from '@fingerprintjs/fingerprintjs-pro-react';
 import Image from 'next/image';
+import { useFingerprintODI } from '../components/FingerprintProvider';
+import LatencyMetrics from '../components/LatencyMetrics';
 
 // Mock data for checkout
 const subtotal = '$99.00';
@@ -32,87 +33,60 @@ function classNames(...classes) {
 }
 
 export default function Checkout() {
-  const [latency, setLatency] = useState(null);
-  const startTimeRef = useRef(Date.now());
+  const [showIdentificationComplete, setShowIdentificationComplete] = useState(false);
+  const [paymentVerified, setPaymentVerified] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   
-  // Use the Fingerprint hook to get visitor data
+  // Use the Fingerprint context
   const {
-    isLoading,
-    error,
-    data: fpData,
-  } = useVisitorData(
-    { 
-      extendedResult: true,
-      ignoreCache: true
-    },
-    { immediate: true }
-  );
+    sendToBackend,
+    visitorId,
+    browserData,
+    backendData,
+    processingPhase,
+  } = useFingerprintODI();
   
-  // Store in localStorage and calculate latency when data is received
+  // Send browser data to backend when checkout page loads
   useEffect(() => {
-    if (fpData && !isLoading) {
-      setLatency(Date.now() - startTimeRef.current);
-      
-      // Store fingerprint data in localStorage for persistence
-      try {
-        localStorage.setItem('fpData', JSON.stringify(fpData));
-      } catch (error) {
-        console.error('Error storing fingerprint data:', error);
+    const processFingerprint = async () => {
+      // Only send to backend if we already have browser data from collection
+      // and we haven't already completed processing
+      if (browserData && processingPhase === 'processing') {
+        const response = await sendToBackend(browserData);
+        if (response) {
+          setShowIdentificationComplete(true);
+        }
+      } else if (processingPhase === 'complete') {
+        // Already processed
+        setShowIdentificationComplete(true);
       }
-    }
-  }, [fpData, isLoading]);
-  
-  // Add error display in the summary section
-  const renderFingerprint = () => {
-    // Check if Fingerprint is in loading state
-    if (isLoading) {
-      return (
-        <div className="rounded-md bg-blue-50 p-4 mb-4">
-          <div className="flex">
-            <div className="ml-3 flex-1">
-              <p className="text-sm text-blue-700">
-                <span className="font-medium">Loading...</span>{' '}
-                <span className="font-mono text-xs break-all">
-                  Getting fingerprint data
-                </span>
-              </p>
-            </div>
-          </div>
-        </div>
-      );
-    }
+    };
     
-    // Check for errors
-    if (error) {
-      return (
-        <div className="rounded-md bg-red-50 p-4 mb-4">
-          <div className="flex">
-            <div className="ml-3 flex-1">
-              <p className="text-sm text-red-700">
-                <span className="font-medium">Error:</span>{' '}
-                <span className="font-mono text-xs break-all">
-                  {error.message || 'Failed to load fingerprint data'}
-                </span>
-              </p>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // Show the fingerprint data
+    processFingerprint();
+  }, [browserData, processingPhase, sendToBackend]);
+  
+  // Handle payment form submission
+  const handlePaymentSubmit = (e) => {
+    e.preventDefault();
+    setIsProcessingPayment(true);
+    
+    // Simulate payment processing
+    setTimeout(() => {
+      setIsProcessingPayment(false);
+      setPaymentVerified(true);
+    }, 1500);
+  };
+  
+  // Add ID verification completion status below the latency metrics
+  const renderIdentificationStatus = () => {
+    if (!showIdentificationComplete) return null;
+    
     return (
-      <div className="rounded-md bg-indigo-50 p-4 mb-4">
-        <div className="flex">
-          <div className="ml-3 flex-1 md:flex md:justify-between">
-            <p className="text-sm text-indigo-700">
-              <span className="font-medium">Fingerprint ID:</span>{' '}
-              <span className="font-mono text-xs break-all">
-                {fpData?.visitorId || 'Not available'}
-              </span>
-            </p>
-          </div>
-        </div>
+      <div className="flex items-center mt-2 bg-green-100 p-2 rounded">
+        <svg className="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+        <span className="text-sm text-green-700">Identification Complete</span>
       </div>
     );
   };
@@ -120,6 +94,31 @@ export default function Checkout() {
   return (
     <>
       <Navbar />
+      
+      {/* Fingerprint Metrics Box - Always visible */}
+      <div className="bg-gray-100 px-4 py-4 sm:px-6">
+        <div className="mx-auto max-w-2xl">
+          <div className="bg-white shadow rounded-lg p-6 mb-6">
+            <h2 className="text-lg font-medium mb-4">Fingerprint Identification Status</h2>
+            <LatencyMetrics />
+            {renderIdentificationStatus()}
+            {visitorId && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="flex">
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-700">
+                      <span className="font-medium">Visitor ID:</span>{' '}
+                      <span className="font-mono text-xs break-all">
+                        {visitorId || backendData?.visitorId || 'Not available'}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
       
       <main className="lg:flex lg:min-h-full lg:flex-row-reverse lg:overflow-hidden">
         <h1 className="sr-only">Checkout</h1>
@@ -247,17 +246,20 @@ export default function Checkout() {
 
           <div className="sticky bottom-0 flex-none border-t border-gray-200 bg-gray-50 p-6">
             <div className="mt-4">
-              {renderFingerprint()}
-              <div className="rounded-md bg-green-50 p-4">
-                <div className="flex">
-                  <div className="ml-3 flex-1 md:flex md:justify-between">
-                    <p className="text-sm text-green-700">
-                      <span className="font-medium">Latency:</span>{' '}
-                      {latency ? `${latency}ms` : 'Calculating...'}
-                    </p>
+              {paymentVerified && (
+                <div className="rounded-md bg-green-50 p-4">
+                  <div className="flex">
+                    <div className="ml-3 flex-1 md:flex md:justify-between">
+                      <p className="text-sm text-green-700">
+                        <span className="font-medium">Payment verified</span>{' '}
+                        <span className="font-mono text-xs">
+                          Your order is ready to be processed
+                        </span>
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <form className="mt-6">
@@ -340,7 +342,7 @@ export default function Checkout() {
               </div>
             </div>
 
-            <form className="mt-6">
+            <form className="mt-6" onSubmit={handlePaymentSubmit}>
               <div className="grid grid-cols-12 gap-x-4 gap-y-6">
                 <div className="col-span-full">
                   <label htmlFor="email-address" className="block text-sm/6 font-medium text-gray-700">
@@ -517,9 +519,12 @@ export default function Checkout() {
 
               <button
                 type="submit"
-                className="mt-6 w-full rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                className={`mt-6 w-full rounded-md border border-transparent ${
+                  isProcessingPayment ? 'bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700'
+                } px-4 py-2 text-sm font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2`}
+                disabled={isProcessingPayment}
               >
-                Pay {total}
+                {isProcessingPayment ? 'Processing...' : `Pay ${total}`}
               </button>
 
               <p className="mt-6 flex justify-center text-sm font-medium text-gray-500">
