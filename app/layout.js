@@ -51,16 +51,17 @@ function FingerprintWrapper({ children }) {
     )
   }
 
+  // Use the same agent for FpjsProvider that we created for the global window object
   return (
     <FpjsProvider
       loadOptions={{
         apiKey: "A5dUKxfbZOeQQ4vEU4AA",
         region: "us",
-        // @ts-ignore
+        // @ts-ignore - These ts-ignore comments are needed for TypeScript projects
         modules: [
-          fpjsModule.makeIdentificationModule(), // If you use identification
-          fpjsModule.makeBotdModule(),           // If you use bot detection
-          fpjsModule.makeLatencyReportModule(),  // For performance monitoring
+          fpjsModule.makeIdentificationModule(),
+          fpjsModule.makeBotdModule(),
+          fpjsModule.makeLatencyReportModule(),
         ],
       }}
       // @ts-ignore

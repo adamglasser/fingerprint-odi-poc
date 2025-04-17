@@ -30,14 +30,17 @@ function classNames(...classes) {
 }
 
 /**
- * Client-side fingerprint component
+ * Custom hook for retrieving fingerprint data
  */
 function useFingerprintData(onDataReceived) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const retryCount = useRef(0);
+  const MAX_RETRIES = 5;
   
   useEffect(() => {
     let isMounted = true;
+    let retryTimeout = null;
     
     const getFingerprintData = async () => {
       try {
@@ -53,8 +56,17 @@ function useFingerprintData(onDataReceived) {
             setIsLoading(false);
           }
         } else {
-          // Wait for agent to be available
-          setTimeout(getFingerprintData, 500);
+          // Increment retry count
+          retryCount.current += 1;
+          
+          // Stop retrying after MAX_RETRIES
+          if (retryCount.current > MAX_RETRIES) {
+            throw new Error('Fingerprint agent not available after multiple retries');
+          }
+          
+          // Wait for agent to be available with exponential backoff
+          const delay = Math.min(1000 * Math.pow(1.5, retryCount.current - 1), 5000);
+          retryTimeout = setTimeout(getFingerprintData, delay);
         }
       } catch (err) {
         console.error('Error getting fingerprint data:', err);
@@ -69,6 +81,9 @@ function useFingerprintData(onDataReceived) {
     
     return () => {
       isMounted = false;
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
+      }
     };
   }, [onDataReceived]);
   
@@ -78,7 +93,7 @@ function useFingerprintData(onDataReceived) {
 export default function Checkout() {
   const [fpData, setFpData] = useState(null);
   const [latency, setLatency] = useState(null);
-  const startTimeRef = useRef(null);
+  const startTimeRef = useRef(Date.now());
   
   // Load saved data on first render
   useEffect(() => {
@@ -87,7 +102,6 @@ export default function Checkout() {
       if (savedData) {
         setFpData(JSON.parse(savedData));
       }
-      startTimeRef.current = Date.now();
     } catch (error) {
       console.error('Error loading saved fingerprint data:', error);
     }
@@ -95,9 +109,7 @@ export default function Checkout() {
   
   const handleFingerprintData = useRef((data) => {
     setFpData(data);
-    if (startTimeRef.current) {
-      setLatency(Date.now() - startTimeRef.current);
-    }
+    setLatency(Date.now() - startTimeRef.current);
     
     // Store fingerprint data in localStorage for persistence
     localStorage.setItem('fpData', JSON.stringify(data));
