@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Disclosure } from '@headlessui/react';
 import { LockClosedIcon } from '@heroicons/react/20/solid';
 import Navbar from '../components/Navbar';
@@ -64,36 +64,55 @@ export default function Checkout() {
   
   // Perform the full identification flow on the checkout page
   useEffect(() => {
+    // Simple flag to prevent concurrent processing
+    let isProcessing = false;
+    
     const processIdentification = async () => {
-      // If we don't have backend data yet, we need to send browser data first
-      if (browserData && (!backendData || processingPhase === 'processing')) {
-        // Send browser data to our backend
-        const backendResponse = await sendToBackend(browserData);
+      // Skip if already processing
+      if (isProcessing) return;
+      isProcessing = true;
+      
+      try {
+        // If identification is already complete, just show completion
+        if (processingPhase === 'complete' && visitorId) {
+          setShowIdentificationComplete(true);
+          return;
+        }
         
-        if (backendResponse) {
-          // Now complete the identification with Fingerprint
-          const identificationResponse = await completeIdentification();
-          if (identificationResponse) {
+        // If we don't have backend data yet, we need to send browser data first
+        if (browserData && (!backendData || processingPhase === 'processing')) {
+          // Send browser data to our backend
+          const backendResponse = await sendToBackend(browserData);
+          
+          if (backendResponse) {
+            // Now complete the identification with Fingerprint
+            const identificationResponse = await completeIdentification();
+            if (identificationResponse) {
+              setShowIdentificationComplete(true);
+            }
+          }
+        } 
+        // If we already have backend data but identification isn't complete
+        else if (backendData && (processingPhase === 'stored' || processingPhase === 'sending')) {
+          // Just complete the identification
+          const response = await completeIdentification();
+          if (response) {
             setShowIdentificationComplete(true);
           }
         }
-      } 
-      // If we already have backend data but identification isn't complete
-      else if (backendData && (processingPhase === 'stored' || processingPhase === 'sending')) {
-        // Just complete the identification
-        const response = await completeIdentification();
-        if (response) {
+        // If identification is already complete
+        else if (processingPhase === 'complete') {
           setShowIdentificationComplete(true);
         }
-      }
-      // If identification is already complete
-      else if (processingPhase === 'complete') {
-        setShowIdentificationComplete(true);
+      } catch (error) {
+        console.error("Error during identification flow:", error);
+      } finally {
+        isProcessing = false;
       }
     };
     
     processIdentification();
-  }, [browserData, backendData, processingPhase, sendToBackend, completeIdentification]);
+  }, [browserData, backendData, processingPhase, visitorId, sendToBackend, completeIdentification]);
   
   // Handle payment form submission
   const handlePaymentSubmit = (e) => {

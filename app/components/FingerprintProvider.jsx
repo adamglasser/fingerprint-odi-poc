@@ -220,7 +220,7 @@ export default function FingerprintProvider({ children }) {
   // Function to complete identification by calling /send endpoint and handling agent data
   const completeIdentification = async () => {
     if (!backendData) {
-      console.warn("No backend data available to complete identification");
+      
       return null;
     }
     
@@ -267,13 +267,12 @@ export default function FingerprintProvider({ children }) {
           sessionStorage.setItem('fpBackendLatency', ((storageLatency || 0) + identifyLatency).toString());
           sessionStorage.setItem('fpProcessingPhase', 'complete');
         } catch (err) {
-          console.error('Error storing in sessionStorage:', err);
+          // Silently handle sessionStorage errors
         }
       }
       
       return data;
     } catch (err) {
-      console.error("Error completing identification:", err);
       setError(err);
       setProcessingPhase('error');
       return null;
