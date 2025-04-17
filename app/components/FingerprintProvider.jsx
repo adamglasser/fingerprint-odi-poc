@@ -220,7 +220,7 @@ export default function FingerprintProvider({ children }) {
   // Function to complete identification by calling /send endpoint and handling agent data
   const completeIdentification = async () => {
     if (!backendData) {
-      console.error("No backend data available to complete identification");
+      console.warn("No backend data available to complete identification");
       return null;
     }
     

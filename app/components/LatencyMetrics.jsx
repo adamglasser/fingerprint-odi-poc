@@ -1,15 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useFingerprintODI } from './FingerprintProvider';
 
-export default function LatencyMetrics({ phase }) {
+export default function LatencyMetrics() {
   const { 
     latency: collectLatency, 
     backendLatency,
     storageLatency,
     identificationLatency,
-    backendData,
     processingPhase,
     isLoading,
     error,
@@ -227,4 +226,4 @@ export default function LatencyMetrics({ phase }) {
       </div>
     </div>
   );
-} 
+}

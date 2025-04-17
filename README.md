@@ -13,12 +13,13 @@ The implementation follows these key steps:
 This approach provides:
 - Faster loading times across most pages (no waiting for full identification)
 - Complete control over when to perform full identification
+- Better UX by showing transparent latency metrics throughout the process
 
 ## Component Structure
 
 ### FingerprintProvider
 
-The core of the implementation is the `FingerprintProvider` (in `app/components/FingerprintProvider.jsx`), which:
+The core of the implementation is the [`FingerprintProvider`](app/components/FingerprintProvider.jsx) (in `app/components/FingerprintProvider.jsx`), which:
 
 - Initializes the Fingerprint static agent
 - Manages browser data collection
@@ -42,7 +43,7 @@ The provider maintains several important states:
 
 ### 1. Signal Collection
 
-**Function: `collectBrowserData()`**
+**Function: [`collectBrowserData()`](app/components/FingerprintProvider.jsx#L119-L154)**
 
 This function:
 - Calls the Fingerprint static agent's `collect()` method
@@ -56,24 +57,24 @@ Collection happens automatically when:
 
 ### 2. Backend Data Storage
 
-**Function: `sendToBackend()`**
+**Function: [`sendToBackend()`](app/components/FingerprintProvider.jsx#L157-L200)**
 
 This function:
-- Takes the browser data and sends it to our `/api/collect-fingerprint` endpoint
+- Takes the browser data and sends it to our [`/api/collect-fingerprint`](app/api/collect-fingerprint/route.js) endpoint
 - Measures and stores storage latency
 - Sets `processingPhase` to 'stored'
 - Stores data in `sessionStorage`
 
 Triggered:
-- Automatically on the homepage when browser data is available (see `app/page.js`)
+- Automatically on the homepage when browser data is available (see [`app/page.js`](app/page.js))
 - When the checkout page loads, if data hasn't been sent yet
 
 ### 3. Complete Identification
 
-**Function: `completeIdentification()`**
+**Function: [`completeIdentification()`](app/components/FingerprintProvider.jsx#L203-L258)**
 
 This function:
-- Takes previously stored backend data and sends it to our `/api/fingerprint` endpoint 
+- Takes previously stored backend data and sends it to our [`/api/fingerprint`](app/api/fingerprint/route.js) endpoint 
 - Our backend then calls Fingerprint's `/send` endpoint to complete identification
 - Handles the `agentData` returned from Fingerprint
 - Measures and stores identification latency
@@ -81,13 +82,13 @@ This function:
 - Sets `processingPhase` to 'complete'
 
 Only triggered:
-- When the user reaches the checkout page
+- When the user reaches the checkout page (see [`app/checkout/page.js`](app/checkout/page.js))
 
 ## API Routes
 
 The implementation includes two critical API routes:
 
-### 1. `/api/collect-fingerprint`
+### 1. [`/api/collect-fingerprint`](app/api/collect-fingerprint/route.js)
 
 This endpoint:
 - Receives browser data from the frontend
@@ -95,7 +96,7 @@ This endpoint:
 - Stores the data for later use
 - Returns storage metrics without calling Fingerprint
 
-### 2. `/api/fingerprint`
+### 2. [`/api/fingerprint`](app/api/fingerprint/route.js)
 
 This endpoint:
 - Receives either direct browser data or previously stored backend data
@@ -105,7 +106,7 @@ This endpoint:
 
 ## Metrics Display
 
-The `LatencyMetrics` component provides a real-time view of the identification process:
+The [`LatencyMetrics`](app/components/LatencyMetrics.jsx) component provides a real-time view of the identification process:
 
 - Shows the current processing phase
 - Displays detailed timing information for each step
@@ -169,7 +170,7 @@ The implementation demonstrates how to use Fingerprint ODI in a real application
 
 ## Reset Functionality
 
-The application includes a reset mechanism to:
+The application includes a [reset mechanism](app/components/FingerprintProvider.jsx#L278-L325) to:
 - Clear all cookies
 - Remove session storage data
 - Reset all state
