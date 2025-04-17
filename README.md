@@ -104,9 +104,45 @@ This endpoint:
 - Calls the `/send` endpoint with the required data
 - Returns the visitor ID, agent data, and other Fingerprint information
 
+The endpoint accepts two possible input structures:
+1. Direct fingerprint data submission:
+```javascript
+{
+  "fingerprintData": { /* Browser data collected by FingerprintJS */ }
+}
+```
+
+2. Backend data from previous collection:
+```javascript
+{
+  "backendData": {
+    "collectedData": {
+      "fingerprintData": { /* Browser data collected by FingerprintJS */ },
+      "clientIP": "user's IP address",
+      "clientHost": "request host",
+      "clientUserAgent": "user agent string",
+      "clientCookie": "optional Fingerprint cookie",
+      "clientHeaders": { /* All request headers */ }
+    },
+    "backendLatency": 123 // Previous backend processing time in ms
+  }
+}
+```
+
+The `backendData` parameter is crucial for the ODI pattern as it:
+- Allows storage of previously collected fingerprint data
+- Preserves the user's request metadata (IP, headers, etc.)
+- Tracks cumulative backend processing time across the identification flow
+- Enables deferred identification at the optimal moment (e.g., checkout)
+
+When using the `backendData` approach, identification can be split into two phases:
+1. Initial data collection and storage (via `/api/collect-fingerprint`)
+2. Completing identification (via `/api/fingerprint` with `backendData`)
+
+
 ## Metrics Display
 
-The [`LatencyMetrics`](app/components/LatencyMetrics.jsx) component provides a real-time view of the identification process:
+The [`LatencyMetrics`](app/components/LatencyMetrics.jsx) component provides a view into the identification process:
 
 - Shows the current processing phase
 - Displays detailed timing information for each step
