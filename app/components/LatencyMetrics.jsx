@@ -5,7 +5,7 @@ import { useFingerprintODI } from './FingerprintProvider';
 
 export default function LatencyMetrics() {
   const { 
-    latency: collectLatency, 
+    collectLatency,
     backendLatency,
     storageLatency,
     identificationLatency,
@@ -65,7 +65,7 @@ export default function LatencyMetrics() {
           <div className="flex-1">
             <p className="text-sm text-yellow-700">
               <span className="font-mono text-xs">
-                ✓ Collection completed in {collectLatency ? `${collectLatency.toFixed(2)}ms` : 'N/A'}
+                ✓ Signal collection completed in {collectLatency ? `${collectLatency.toFixed(2)}ms` : 'N/A'}
               </span>
             </p>
           </div>
@@ -93,7 +93,7 @@ export default function LatencyMetrics() {
           <div className="flex-1">
             <p className="text-sm text-yellow-700">
               <span className="font-mono text-xs">
-                ✓ Collection completed in {collectLatency ? `${collectLatency.toFixed(2)}ms` : 'N/A'}
+                ✓ Signal collection completed in {collectLatency ? `${collectLatency.toFixed(2)}ms` : 'N/A'}
               </span>
             </p>
           </div>
@@ -114,7 +114,7 @@ export default function LatencyMetrics() {
           <div className="flex-1">
             <p className="text-sm text-green-700">
               <span className="font-mono text-xs">
-                ✓ Collection: {collectLatency ? `${collectLatency.toFixed(2)}ms` : 'N/A'}
+                ✓ Browser signal collection: {collectLatency ? `${collectLatency.toFixed(2)}ms` : 'N/A'}
               </span>
             </p>
           </div>
@@ -149,7 +149,7 @@ export default function LatencyMetrics() {
           <div className="flex-1">
             <p className="text-sm text-yellow-700">
               <span className="font-mono text-xs">
-                ✓ Collection: {collectLatency ? `${collectLatency.toFixed(2)}ms` : 'N/A'}
+                ✓ Browser signal collection: {collectLatency ? `${collectLatency.toFixed(2)}ms` : 'N/A'}
               </span>
             </p>
           </div>
@@ -193,7 +193,7 @@ export default function LatencyMetrics() {
         </div>
         <div className="flex-1">
           <p className="text-sm text-indigo-700">
-            <span className="font-medium">Browser collection:</span>{' '}
+            <span className="font-medium">Browser signal collection:</span>{' '}
             <span className="font-mono text-xs">
               {collectLatency ? `${collectLatency.toFixed(2)}ms` : 'N/A'}
             </span>
@@ -217,7 +217,7 @@ export default function LatencyMetrics() {
         </div>
         <div className="flex-1">
           <p className="text-sm text-indigo-700 font-semibold">
-            <span className="font-medium">Total latency:</span>{' '}
+            <span className="font-medium">Total end-to-end latency:</span>{' '}
             <span className="font-mono text-xs">
               {collectLatency && backendLatency ? `${(collectLatency + backendLatency).toFixed(2)}ms` : 'N/A'}
             </span>

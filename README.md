@@ -33,7 +33,7 @@ The provider maintains several important states:
 
 - `browserData`: Raw data from the `collect()` method
 - `processingPhase`: Current stage in the identification flow (initial → collecting → processing → sending → stored → identifying → complete)
-- `latency`: Browser-side signal collection time
+- `collectLatency`: Browser-side signal collection time (time it takes to collect browser signals)
 - `storageLatency`: Time to store data on our backend
 - `identificationLatency`: Time to complete the Fingerprint identification
 - `backendLatency`: Total backend processing time (storage + identification)
@@ -49,7 +49,7 @@ The collection process is handled by two main functions:
 
 This shared function:
 - Takes a Fingerprint instance and calls its `collect()` method
-- Measures and stores collection latency
+- Measures and stores browser signal collection latency
 - Sets `processingPhase` to 'processing'
 - Stores the data in `sessionStorage` for persistence
 
@@ -197,7 +197,7 @@ if (data.agentData && fpInstance) {
 Browser data and metrics are stored in `sessionStorage` to ensure persistence across page navigation, including:
 
 - Browser data collection results
-- Collection latency
+- Browser signal collection latency
 - Backend storage latency  
 - Identification latency
 - Current processing phase
@@ -241,6 +241,3 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-

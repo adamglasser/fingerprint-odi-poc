@@ -9,7 +9,7 @@ const defaultContextValue = {
   collectBrowserData: async () => null,
   sendToBackend: async () => null,
   completeIdentification: async () => null,
-  latency: null,
+  collectLatency: null,
   visitorId: null,
   isLoading: false,
   error: null,
@@ -34,7 +34,7 @@ export function useFingerprintODI() {
 export default function FingerprintProvider({ children }) {
   const [isMounted, setIsMounted] = useState(false);
   const [fpInstance, setFpInstance] = useState(null);
-  const [latency, setLatency] = useState(null);
+  const [collectLatency, setCollectLatency] = useState(null);
   const [visitorId, setVisitorId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -57,22 +57,22 @@ export default function FingerprintProvider({ children }) {
     setIsLoading(true);
     setProcessingPhase('collecting');
     // Reset latency values to ensure we only measure actual processing time
-    setLatency(null);
+    setCollectLatency(null);
     setBackendLatency(null);
     
     const startTime = performance.now();
     
     try {
       const data = await instance.collect();
-      const collectLatency = performance.now() - startTime;
-      setLatency(collectLatency);
+      const browserCollectLatency = performance.now() - startTime;
+      setCollectLatency(browserCollectLatency);
       setBrowserData(data);
       setProcessingPhase('processing');
       
       // Store in sessionStorage
       try {
         sessionStorage.setItem('fpBrowserData', data);
-        sessionStorage.setItem('fpCollectLatency', collectLatency.toString());
+        sessionStorage.setItem('fpCollectLatency', browserCollectLatency.toString());
         sessionStorage.setItem('fpProcessingPhase', 'processing');
       } catch (err) {
         console.error('Error storing in sessionStorage:', err);
@@ -134,7 +134,7 @@ export default function FingerprintProvider({ children }) {
       
       if (storedBrowserData) {
         setBrowserData(storedBrowserData);
-        if (storedLatency) setLatency(parseFloat(storedLatency));
+        if (storedLatency) setCollectLatency(parseFloat(storedLatency));
         if (storedPhase) setProcessingPhase(storedPhase);
         if (storedBackendLatency) setBackendLatency(parseFloat(storedBackendLatency));
         if (storedStorageLatency) setStorageLatency(parseFloat(storedStorageLatency));
@@ -306,7 +306,7 @@ export default function FingerprintProvider({ children }) {
     }
     
     // Reset state
-    setLatency(null);
+    setCollectLatency(null);
     setVisitorId(null);
     setError(null);
     setProcessingPhase('initial');
@@ -343,11 +343,11 @@ export default function FingerprintProvider({ children }) {
     collectBrowserData,
     sendToBackend,
     completeIdentification,
-    latency,
+    collectLatency,
     visitorId,
     isLoading,
     error,
-    setLatency,
+    setLatency: setCollectLatency,
     processingPhase,
     browserData,
     backendData,
