@@ -47,6 +47,8 @@ export default function FingerprintProvider({ children }) {
   
   // Keep track of reset callbacks
   const resetCallbacksRef = useRef([]);
+  // Keep a reference to the loadFpAndCollect function for resets
+  const loadFpAndCollectRef = useRef(null);
 
   // Shared function for collecting and storing data
   const collectAndStoreData = async (instance) => {
@@ -118,6 +120,9 @@ export default function FingerprintProvider({ children }) {
         }
       };
       
+      // Store the function in a ref for later use in resetEnvironment
+      loadFpAndCollectRef.current = loadFpAndCollect;
+      
       // Check if we already have browser data in session storage
       const storedBrowserData = sessionStorage.getItem('fpBrowserData');
       const storedLatency = sessionStorage.getItem('fpCollectLatency');
@@ -138,13 +143,10 @@ export default function FingerprintProvider({ children }) {
       } else {
         loadFpAndCollect();
       }
-
-      // Expose the loadFpAndCollect function for reset
-      window.fpLoadAndCollect = loadFpAndCollect;
     }
   }, []);
 
-  // Function to collect browser data
+  // Function to collect browser data - now just a wrapper around the shared function
   const collectBrowserData = async () => {
     return collectAndStoreData(fpInstance);
   };
@@ -325,11 +327,14 @@ export default function FingerprintProvider({ children }) {
     
     // Reload Fingerprint instance and collect data
     if (fpInstance) {
-      // Collect new data
+      // Collect new data using existing instance
       collectBrowserData();
-    } else if (window.fpLoadAndCollect) {
-      // If no instance but we have the loader function
-      window.fpLoadAndCollect();
+    } else if (loadFpAndCollectRef.current) {
+      // If no instance but we have the loader function in our ref
+      loadFpAndCollectRef.current();
+    } else {
+      // Error case, should not happen in normal usage
+      console.warn("No fingerprint instance or loader function available for reset");
     }
   };
 
