@@ -107,6 +107,7 @@ export default function FingerprintIframeProvider({ children }) {
   // Function to send messages to the iframe
   const sendMessageToIframe = (type, action, data = {}) => {
     if (iframeRef.current && iframeRef.current.contentWindow) {
+      console.log('🔵 Parent -> Iframe:', { type, action, ...data });
       iframeRef.current.contentWindow.postMessage({ 
         type, 
         action,
@@ -120,6 +121,7 @@ export default function FingerprintIframeProvider({ children }) {
     // Handle messages from the iframe
     const handleMessage = (event) => {
       const { type, data } = event.data || {};
+      console.log('🟡 Iframe -> Parent:', { type, data });
       
       switch (type) {
         case 'status':
@@ -129,6 +131,7 @@ export default function FingerprintIframeProvider({ children }) {
           handleDataMessage(data);
           break;
         case 'error':
+          console.error('❌ Iframe Error:', data.message);
           setError(data.message);
           setProcessingPhase('error');
           break;
@@ -137,6 +140,7 @@ export default function FingerprintIframeProvider({ children }) {
 
     // Handle different status messages from the iframe
     const handleStatusMessage = (data) => {
+      console.log('📊 Status Update:', { message: data.message, phase: processingPhase });
       switch (data.message) {
         case 'initializing':
           setIsLoading(true);
@@ -153,17 +157,23 @@ export default function FingerprintIframeProvider({ children }) {
           setProcessingPhase('initial');
           break;
         case 'reset_complete':
-          // Reset is complete, start a new collection
+          console.log('🔄 Reset complete, starting new collection');
           collectBrowserData();
           break;
         case 'agentDataHandled':
-          // Agent data has been handled, update UI if needed
+          console.log('✅ Agent data handled');
           break;
       }
     };
 
     // Handle data messages from the iframe
     const handleDataMessage = (data) => {
+      console.log('📈 Received Data:', {
+        collectLatency: data.collectLatency,
+        loadLatency: data.loadLatency,
+        totalLatency: data.totalLatency
+      });
+      
       setIsLoading(false);
       setBrowserData(data.browserData);
       setCollectLatency(data.collectLatency);
@@ -179,7 +189,7 @@ export default function FingerprintIframeProvider({ children }) {
         sessionStorage.setItem('fpTotalLatency', data.totalLatency.toString());
         sessionStorage.setItem('fpProcessingPhase', 'processing');
       } catch (err) {
-        console.error('Error storing in sessionStorage:', err);
+        console.error('❌ Storage Error:', err);
       }
     };
 
@@ -337,8 +347,16 @@ export default function FingerprintIframeProvider({ children }) {
 
   // Function to reset the environment
   const resetEnvironment = async () => {
-    // Clear session storage
+    // Clear all session storage
     try {
+      // Clear all FP-related items from sessionStorage
+      Object.keys(sessionStorage).forEach(key => {
+        if (key.startsWith('fp')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      
+      // Explicitly clear known items
       sessionStorage.removeItem('fpBrowserData');
       sessionStorage.removeItem('fpCollectLatency');
       sessionStorage.removeItem('fpLoadLatency');
@@ -352,16 +370,8 @@ export default function FingerprintIframeProvider({ children }) {
       console.error('Error clearing sessionStorage:', err);
     }
     
-    // Clear stored fingerprint data from backend
-    try {
-      await fetch('/api/clear-fingerprint', {
-        method: 'POST'
-      });
-    } catch (err) {
-      console.error('Error clearing fingerprint data:', err);
-    }
-    
-    // Reset state
+    // Reset all state to null/initial values
+    setIframeLoaded(false);
     setCollectLatency(null);
     setLoadLatency(null);
     setTotalLatency(null);
@@ -373,9 +383,28 @@ export default function FingerprintIframeProvider({ children }) {
     setBackendLatency(null);
     setStorageLatency(null);
     setIdentificationLatency(null);
+    setIsLoading(false);
     
-    // Tell the iframe to reset
-    sendMessageToIframe('command', 'reset');
+    // Clear the iframe
+    if (iframeRef.current) {
+      // Remove the iframe
+      const oldIframe = iframeRef.current;
+      oldIframe.remove();
+      
+      // Create a new iframe
+      const newIframe = document.createElement('iframe');
+      newIframe.src = '/iframe';
+      newIframe.width = '1';
+      newIframe.height = '1';
+      newIframe.style.border = 'none';
+      newIframe.style.position = 'absolute';
+      newIframe.title = 'Fingerprint Collection';
+      newIframe.onload = handleIframeLoad;
+      
+      // Add the new iframe
+      oldIframe.parentNode.appendChild(newIframe);
+      iframeRef.current = newIframe;
+    }
     
     // Notify subscribers about the reset
     resetCallbacksRef.current.forEach(callback => {

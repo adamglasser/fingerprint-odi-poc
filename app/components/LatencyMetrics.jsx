@@ -6,6 +6,8 @@ import { useFingerprintODI } from './FingerprintProvider';
 export default function LatencyMetrics() {
   const { 
     collectLatency,
+    loadLatency,
+    totalLatency,
     backendLatency,
     storageLatency,
     identificationLatency,
@@ -14,7 +16,7 @@ export default function LatencyMetrics() {
     error,
     registerResetCallback
   } = useFingerprintODI();
-  
+
   // Register a reset callback to ensure the component updates when environment resets
   useEffect(() => {
     if (registerResetCallback) {
@@ -24,6 +26,30 @@ export default function LatencyMetrics() {
       });
     }
   }, [registerResetCallback]);
+
+  // Helper function to get progress percentage based on phase
+  const getProgressPercentage = (phase) => {
+    switch (phase) {
+      case 'initial':
+        return 0;
+      case 'initializing':
+        return 10;
+      case 'collecting':
+        return 20;
+      case 'processing':
+        return 40;
+      case 'sending':
+        return 60;
+      case 'stored':
+        return 80;
+      case 'identifying':
+        return 90;
+      case 'complete':
+        return 100;
+      default:
+        return 0;
+    }
+  };
 
   if (processingPhase === 'initial' || isLoading) {
     return (
@@ -62,13 +88,24 @@ export default function LatencyMetrics() {
               <span className="font-medium">Browser signals collected</span>
             </p>
           </div>
-          <div className="flex-1">
-            <p className="text-sm text-yellow-700">
-              <span className="font-mono text-xs">
-                ✓ Signal collection completed in {collectLatency ? `${collectLatency.toFixed(2)}ms` : 'N/A'}
-              </span>
-            </p>
-          </div>
+          {loadLatency && (
+            <div className="flex-1">
+              <p className="text-sm text-yellow-700">
+                <span className="font-mono text-xs">
+                  ✓ Agent load time: {loadLatency.toFixed(2)}ms
+                </span>
+              </p>
+            </div>
+          )}
+          {collectLatency && (
+            <div className="flex-1">
+              <p className="text-sm text-yellow-700">
+                <span className="font-mono text-xs">
+                  ✓ Signal collection: {collectLatency.toFixed(2)}ms
+                </span>
+              </p>
+            </div>
+          )}
           <div className="flex-1">
             <p className="text-sm text-yellow-700">
               <span className="font-mono text-xs">
@@ -90,13 +127,15 @@ export default function LatencyMetrics() {
               <span className="font-medium">Sending to backend...</span>
             </p>
           </div>
-          <div className="flex-1">
-            <p className="text-sm text-yellow-700">
-              <span className="font-mono text-xs">
-                ✓ Signal collection completed in {collectLatency ? `${collectLatency.toFixed(2)}ms` : 'N/A'}
-              </span>
-            </p>
-          </div>
+          {loadLatency && collectLatency && (
+            <div className="flex-1">
+              <p className="text-sm text-yellow-700">
+                <span className="font-mono text-xs">
+                  ✓ Browser processing: {(loadLatency + collectLatency).toFixed(2)}ms
+                </span>
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -111,20 +150,43 @@ export default function LatencyMetrics() {
               <span className="font-medium">Data stored on backend</span>
             </p>
           </div>
+
+          {/* Progress bar */}
           <div className="flex-1">
-            <p className="text-sm text-green-700">
-              <span className="font-mono text-xs">
-                ✓ Browser signal collection: {collectLatency ? `${collectLatency.toFixed(2)}ms` : 'N/A'}
-              </span>
-            </p>
+            <div className="w-full bg-green-100 rounded-full h-1.5 mb-2">
+              <div 
+                className="bg-green-600 h-1.5 rounded-full transition-all duration-500" 
+                style={{ 
+                  width: `${getProgressPercentage(processingPhase)}%`,
+                }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-green-600 mb-4">
+              <span>Collection</span>
+              <span>Storage</span>
+              <span>Identification</span>
+            </div>
           </div>
-          <div className="flex-1">
-            <p className="text-sm text-green-700">
-              <span className="font-mono text-xs">
-                ✓ Backend storage: {storageLatency ? `${storageLatency.toFixed(2)}ms` : 'N/A'}
-              </span>
-            </p>
-          </div>
+
+          {collectLatency && (
+            <div className="flex-1">
+              <p className="text-sm text-green-700">
+                <span className="font-mono text-xs">
+                  ✓ Signal collection: {collectLatency.toFixed(2)}ms
+                </span>
+              </p>
+            </div>
+          )}
+
+          {storageLatency && (
+            <div className="flex-1">
+              <p className="text-sm text-green-700">
+                <span className="font-mono text-xs">
+                  ✓ Backend storage: {storageLatency.toFixed(2)}ms
+                </span>
+              </p>
+            </div>
+          )}
           <div className="flex-1">
             <p className="text-sm text-green-700 italic">
               <span className="font-mono text-xs">
@@ -146,20 +208,24 @@ export default function LatencyMetrics() {
               <span className="font-medium">Completing identification...</span>
             </p>
           </div>
-          <div className="flex-1">
-            <p className="text-sm text-yellow-700">
-              <span className="font-mono text-xs">
-                ✓ Browser signal collection: {collectLatency ? `${collectLatency.toFixed(2)}ms` : 'N/A'}
-              </span>
-            </p>
-          </div>
-          <div className="flex-1">
-            <p className="text-sm text-yellow-700">
-              <span className="font-mono text-xs">
-                ✓ Backend storage: {storageLatency ? `${storageLatency.toFixed(2)}ms` : 'N/A'}
-              </span>
-            </p>
-          </div>
+          {loadLatency && collectLatency && (
+            <div className="flex-1">
+              <p className="text-sm text-yellow-700">
+                <span className="font-mono text-xs">
+                  ✓ Browser processing: {(loadLatency + collectLatency).toFixed(2)}ms
+                </span>
+              </p>
+            </div>
+          )}
+          {storageLatency && (
+            <div className="flex-1">
+              <p className="text-sm text-yellow-700">
+                <span className="font-mono text-xs">
+                  ✓ Backend storage: {storageLatency.toFixed(2)}ms
+                </span>
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -191,38 +257,68 @@ export default function LatencyMetrics() {
             Fingerprint Identification Complete
           </p>
         </div>
+        
+        {/* Progress bar */}
         <div className="flex-1">
-          <p className="text-sm text-indigo-700">
-            <span className="font-medium">Browser signal collection:</span>{' '}
-            <span className="font-mono text-xs">
-              {collectLatency ? `${collectLatency.toFixed(2)}ms` : 'N/A'}
-            </span>
-          </p>
+          <div className="w-full bg-indigo-100 rounded-full h-1.5 mb-2">
+            <div 
+              className="bg-indigo-600 h-1.5 rounded-full transition-all duration-500" 
+              style={{ 
+                width: `${getProgressPercentage(processingPhase)}%`,
+              }}
+            />
+          </div>
+          <div className="flex justify-between text-xs text-indigo-600 mb-4">
+            <span>Collection</span>
+            <span>Storage</span>
+            <span>Identification</span>
+          </div>
         </div>
-        <div className="flex-1">
-          <p className="text-sm text-indigo-700">
-            <span className="font-medium">Backend data storage:</span>{' '}
-            <span className="font-mono text-xs">
-              {storageLatency ? `${storageLatency.toFixed(2)}ms` : 'N/A'}
-            </span>
-          </p>
-        </div>
-        <div className="flex-1">
-          <p className="text-sm text-indigo-700">
-            <span className="font-medium">Fingerprint identification:</span>{' '}
-            <span className="font-mono text-xs">
-              {identificationLatency ? `${identificationLatency.toFixed(2)}ms` : 'N/A'}
-            </span>
-          </p>
-        </div>
-        <div className="flex-1">
-          <p className="text-sm text-indigo-700 font-semibold">
-            <span className="font-medium">Total end-to-end latency:</span>{' '}
-            <span className="font-mono text-xs">
-              {collectLatency && backendLatency ? `${(collectLatency + backendLatency).toFixed(2)}ms` : 'N/A'}
-            </span>
-          </p>
-        </div>
+
+        {loadLatency && (
+          <div className="flex-1">
+            <p className="text-sm text-indigo-700">
+              <span className="font-medium">Agent load time:</span>{' '}
+              <span className="font-mono text-xs">{loadLatency.toFixed(2)}ms</span>
+            </p>
+          </div>
+        )}
+        
+        {collectLatency && (
+          <div className="flex-1">
+            <p className="text-sm text-indigo-700">
+              <span className="font-medium">Signal collection:</span>{' '}
+              <span className="font-mono text-xs">{collectLatency.toFixed(2)}ms</span>
+            </p>
+          </div>
+        )}
+        
+        {storageLatency && (
+          <div className="flex-1">
+            <p className="text-sm text-indigo-700">
+              <span className="font-medium">Backend storage:</span>{' '}
+              <span className="font-mono text-xs">{storageLatency.toFixed(2)}ms</span>
+            </p>
+          </div>
+        )}
+        
+        {identificationLatency && (
+          <div className="flex-1">
+            <p className="text-sm text-indigo-700">
+              <span className="font-medium">Identification:</span>{' '}
+              <span className="font-mono text-xs">{identificationLatency.toFixed(2)}ms</span>
+            </p>
+          </div>
+        )}
+        
+        {totalLatency && (
+          <div className="flex-1">
+            <p className="text-sm text-indigo-700 font-semibold">
+              <span className="font-medium">Total end-to-end:</span>{' '}
+              <span className="font-mono text-xs">{totalLatency.toFixed(2)}ms</span>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

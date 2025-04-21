@@ -47,13 +47,15 @@ export default function FingerprintClient() {
     try {
       sendMessageToParent('status', { message: 'collecting' });
       
+      // Start measuring signal collection
       const collectStartTime = performance.now();
       const data = await fpInstanceRef.current.collect();
       const collectEndTime = performance.now();
       
-      const loadLatency = loadEndTime.current - loadStartTime.current;
-      const collectLatency = collectEndTime - collectStartTime;
-      const totalLatency = collectEndTime - loadStartTime.current;
+      // Calculate accurate timings for all phases
+      const loadLatency = loadEndTime.current - loadStartTime.current;  // Time to load agent
+      const collectLatency = collectEndTime - collectStartTime;  // Time to collect signals
+      const totalLatency = collectEndTime - loadStartTime.current;  // Total end-to-end time
       
       sendMessageToParent('data', { 
         browserData: data,
