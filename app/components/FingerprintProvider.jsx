@@ -218,7 +218,7 @@ export default function FingerprintProvider({ children }) {
       const startTime = performance.now();
       
       // Now call the endpoint that triggers Fingerprint's /send endpoint
-      const response = await fetch('/api/fingerprint', {
+      const response = await fetch('/api/send-fingerprint', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

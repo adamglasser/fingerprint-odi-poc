@@ -82,7 +82,7 @@ Triggered:
 **Function: [`completeIdentification()`](app/components/FingerprintProvider.jsx#L221-L258)**
 
 This function:
-- Takes previously stored backend data and sends it to our [`/api/fingerprint`](app/api/fingerprint/route.js) endpoint 
+- Takes previously stored backend data and sends it to our [`/api/send-fingerprint`](app/api/send-fingerprint/route.js) endpoint 
 - Our backend then calls Fingerprint's `/send` endpoint to complete identification
 - Handles the `agentData` returned from Fingerprint
 - Measures and stores identification latency
@@ -104,7 +104,7 @@ This endpoint:
 - Stores the data for later use
 - Returns storage metrics without calling Fingerprint
 
-### 2. [`/api/fingerprint`](app/api/fingerprint/route.js)
+### 2. [`/api/send-fingerprint`](app/api/send-fingerprint/route.js)
 
 This endpoint:
 - Receives either direct browser data or previously stored backend data
@@ -145,7 +145,7 @@ The `backendData` parameter is crucial for the ODI pattern as it:
 
 When using the `backendData` approach, identification can be split into two phases:
 1. Initial data collection and storage (via `/api/store-fingerprint`)
-2. Completing identification (via `/api/fingerprint` with `backendData`)
+2. Completing identification (via `/api/send-fingerprint` with `backendData`)
 
 
 ## Metrics Display

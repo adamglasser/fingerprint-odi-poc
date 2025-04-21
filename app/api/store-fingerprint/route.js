@@ -21,22 +21,11 @@ export async function POST(request) {
       clientIP = clientIP.split(',')[0].trim();
     }
     
-    // Validate IP format (basic validation)
-    function isValidIP(ip) {
-      // IPv4 validation
-      const ipv4Pattern = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
-      if (ipv4Pattern.test(ip)) {
-        const parts = ip.split('.').map(part => parseInt(part, 10));
-        return parts.every(part => part >= 0 && part <= 255);
-      }
-      
-      // Basic IPv6 validation (simplified)
-      const ipv6Pattern = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
-      return ipv6Pattern.test(ip);
-    }
+    // Use Node.js built-in net module for IP validation
+    const { isIP } = require('net');
     
     // Ensure we have a valid IP
-    if (!clientIP || !isValidIP(clientIP)) {
+    if (!clientIP || !isIP(clientIP)) {
       // For testing/development - use a valid public IP
       clientIP = '8.8.8.8';
       console.log('Using fallback IP address');
