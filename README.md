@@ -43,21 +43,29 @@ The provider maintains several important states:
 
 ### 1. Signal Collection
 
-**Function: [`collectBrowserData()`](app/components/FingerprintProvider.jsx#L119-L154)**
+The collection process is handled by two main functions:
 
-This function:
-- Calls the Fingerprint static agent's `collect()` method
+**Function: [`collectAndStoreData()`](app/components/FingerprintProvider.jsx#L48-L85)**
+
+This shared function:
+- Takes a Fingerprint instance and calls its `collect()` method
 - Measures and stores collection latency
 - Sets `processingPhase` to 'processing'
-- Stores the data in `sessionStorage` for persistence across page navigation
+- Stores the data in `sessionStorage` for persistence
+
+**Function: [`collectBrowserData()`](app/components/FingerprintProvider.jsx#L128-L130)**
+
+This wrapper function:
+- Uses the existing Fingerprint instance with the shared collection function
+- Exposed through the context for components to trigger collection
 
 Collection happens automatically when:
-- The application first loads
+- The application first loads via the `loadFpAndCollect()` function
 - The user manually resets the environment
 
 ### 2. Backend Data Storage
 
-**Function: [`sendToBackend()`](app/components/FingerprintProvider.jsx#L157-L200)**
+**Function: [`sendToBackend()`](app/components/FingerprintProvider.jsx#L167-L200)**
 
 This function:
 - Takes the browser data and sends it to our [`/api/collect-fingerprint`](app/api/collect-fingerprint/route.js) endpoint
@@ -71,7 +79,7 @@ Triggered:
 
 ### 3. Complete Identification
 
-**Function: [`completeIdentification()`](app/components/FingerprintProvider.jsx#L203-L258)**
+**Function: [`completeIdentification()`](app/components/FingerprintProvider.jsx#L221-L258)**
 
 This function:
 - Takes previously stored backend data and sends it to our [`/api/fingerprint`](app/api/fingerprint/route.js) endpoint 
@@ -206,7 +214,7 @@ The implementation demonstrates how to use Fingerprint ODI in a real application
 
 ## Reset Functionality
 
-The application includes a [reset mechanism](app/components/FingerprintProvider.jsx#L278-L325) to:
+The application includes a [reset mechanism](app/components/FingerprintProvider.jsx#L296-L343) to:
 - Clear all cookies
 - Remove session storage data
 - Reset all state

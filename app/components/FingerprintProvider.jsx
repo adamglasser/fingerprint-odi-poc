@@ -48,6 +48,45 @@ export default function FingerprintProvider({ children }) {
   // Keep track of reset callbacks
   const resetCallbacksRef = useRef([]);
 
+  // Shared function for collecting and storing data
+  const collectAndStoreData = async (instance) => {
+    if (!instance) return null;
+    
+    setIsLoading(true);
+    setProcessingPhase('collecting');
+    // Reset latency values to ensure we only measure actual processing time
+    setLatency(null);
+    setBackendLatency(null);
+    
+    const startTime = performance.now();
+    
+    try {
+      const data = await instance.collect();
+      const collectLatency = performance.now() - startTime;
+      setLatency(collectLatency);
+      setBrowserData(data);
+      setProcessingPhase('processing');
+      
+      // Store in sessionStorage
+      try {
+        sessionStorage.setItem('fpBrowserData', data);
+        sessionStorage.setItem('fpCollectLatency', collectLatency.toString());
+        sessionStorage.setItem('fpProcessingPhase', 'processing');
+      } catch (err) {
+        console.error('Error storing in sessionStorage:', err);
+      }
+      
+      return data;
+    } catch (err) {
+      console.error("Error collecting browser data:", err);
+      setError(err);
+      setProcessingPhase('error');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Initialize the Fingerprint agent once on the client side and start collection
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -69,32 +108,13 @@ export default function FingerprintProvider({ children }) {
           });
           setFpInstance(fp);
           
-          // Start collection immediately
-          setProcessingPhase('collecting');
-          setIsLoading(true);
-          const startTime = performance.now();
-          
-          const data = await fp.collect();
-          const collectLatency = performance.now() - startTime;
-          setLatency(collectLatency);
-          setBrowserData(data);
-          setProcessingPhase('processing');
-          
-          // Store in sessionStorage for persistence across pages
-          try {
-            sessionStorage.setItem('fpBrowserData', data);
-            sessionStorage.setItem('fpCollectLatency', collectLatency.toString());
-            sessionStorage.setItem('fpProcessingPhase', 'processing');
-          } catch (err) {
-            console.error('Error storing in sessionStorage:', err);
-          }
+          // Use the shared function to collect data
+          await collectAndStoreData(fp);
           
         } catch (err) {
           console.error("Failed to load Fingerprint or collect data:", err);
           setError(err);
           setProcessingPhase('error');
-        } finally {
-          setIsLoading(false);
         }
       };
       
@@ -126,41 +146,7 @@ export default function FingerprintProvider({ children }) {
 
   // Function to collect browser data
   const collectBrowserData = async () => {
-    if (!fpInstance) return null;
-    
-    setIsLoading(true);
-    setProcessingPhase('collecting');
-    // Reset latency values to ensure we only measure actual processing time
-    setLatency(null);
-    setBackendLatency(null);
-    
-    const startTime = performance.now();
-    
-    try {
-      const data = await fpInstance.collect();
-      const collectLatency = performance.now() - startTime;
-      setLatency(collectLatency);
-      setBrowserData(data);
-      setProcessingPhase('processing');
-      
-      // Store in sessionStorage
-      try {
-        sessionStorage.setItem('fpBrowserData', data);
-        sessionStorage.setItem('fpCollectLatency', collectLatency.toString());
-        sessionStorage.setItem('fpProcessingPhase', 'processing');
-      } catch (err) {
-        console.error('Error storing in sessionStorage:', err);
-      }
-      
-      return data;
-    } catch (err) {
-      console.error("Error collecting browser data:", err);
-      setError(err);
-      setProcessingPhase('error');
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
+    return collectAndStoreData(fpInstance);
   };
 
   // Function to send browser data to our backend
