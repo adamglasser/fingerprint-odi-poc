@@ -1,6 +1,6 @@
 # Fingerprint On-Demand Identification (ODI) Implementation
 
-This project demonstrates a practical implementation of Fingerprint's On-Demand Identification (ODI) pattern using Next.js. The implementation follows Fingerprint's recommended approach of "collect now, send later" to improve performance and control over the identification flow.
+This project demonstrates a practical implementation of Fingerprint's On-Demand Identification (ODI) pattern using Next.js. The implementation follows the ODI approach of "collect now, send later" to improve performance and increase control over the identification flow.
 
 ## Architecture Overview
 
@@ -33,7 +33,7 @@ The provider maintains several important states:
 
 - `browserData`: Raw data from the `collect()` method
 - `processingPhase`: Current stage in the identification flow (initial → collecting → processing → sending → stored → identifying → complete)
-- `latency`: Browser-side signal collection time
+- `collectLatency`: Browser-side signal collection time (time it takes to collect browser signals)
 - `storageLatency`: Time to store data on our backend
 - `identificationLatency`: Time to complete the Fingerprint identification
 - `backendLatency`: Total backend processing time (storage + identification)
@@ -43,24 +43,32 @@ The provider maintains several important states:
 
 ### 1. Signal Collection
 
-**Function: [`collectBrowserData()`](app/components/FingerprintProvider.jsx#L119-L154)**
+The collection process is handled by two main functions:
 
-This function:
-- Calls the Fingerprint static agent's `collect()` method
-- Measures and stores collection latency
+**Function: [`collectAndStoreData()`](app/components/FingerprintProvider.jsx#L48-L85)**
+
+This shared function:
+- Takes a Fingerprint instance and calls its `collect()` method
+- Measures and stores browser signal collection latency
 - Sets `processingPhase` to 'processing'
-- Stores the data in `sessionStorage` for persistence across page navigation
+- Stores the data in `sessionStorage` for persistence
+
+**Function: [`collectBrowserData()`](app/components/FingerprintProvider.jsx#L128-L130)**
+
+This wrapper function:
+- Uses the existing Fingerprint instance with the shared collection function
+- Exposed through the context for components to trigger collection
 
 Collection happens automatically when:
-- The application first loads
+- The application first loads via the `loadFpAndCollect()` function
 - The user manually resets the environment
 
 ### 2. Backend Data Storage
 
-**Function: [`sendToBackend()`](app/components/FingerprintProvider.jsx#L157-L200)**
+**Function: [`sendToBackend()`](app/components/FingerprintProvider.jsx#L167-L200)**
 
 This function:
-- Takes the browser data and sends it to our [`/api/collect-fingerprint`](app/api/collect-fingerprint/route.js) endpoint
+- Takes the browser data and sends it to our [`/api/store-fingerprint`](app/api/store-fingerprint/route.js) endpoint
 - Measures and stores storage latency
 - Sets `processingPhase` to 'stored'
 - Stores data in `sessionStorage`
@@ -71,10 +79,10 @@ Triggered:
 
 ### 3. Complete Identification
 
-**Function: [`completeIdentification()`](app/components/FingerprintProvider.jsx#L203-L258)**
+**Function: [`completeIdentification()`](app/components/FingerprintProvider.jsx#L221-L258)**
 
 This function:
-- Takes previously stored backend data and sends it to our [`/api/fingerprint`](app/api/fingerprint/route.js) endpoint 
+- Takes previously stored backend data and sends it to our [`/api/send-fingerprint`](app/api/send-fingerprint/route.js) endpoint 
 - Our backend then calls Fingerprint's `/send` endpoint to complete identification
 - Handles the `agentData` returned from Fingerprint
 - Measures and stores identification latency
@@ -88,7 +96,7 @@ Only triggered:
 
 The implementation includes two critical API routes:
 
-### 1. [`/api/collect-fingerprint`](app/api/collect-fingerprint/route.js)
+### 1. [`/api/store-fingerprint`](app/api/store-fingerprint/route.js)
 
 This endpoint:
 - Receives browser data from the frontend
@@ -96,7 +104,7 @@ This endpoint:
 - Stores the data for later use
 - Returns storage metrics without calling Fingerprint
 
-### 2. [`/api/fingerprint`](app/api/fingerprint/route.js)
+### 2. [`/api/send-fingerprint`](app/api/send-fingerprint/route.js)
 
 This endpoint:
 - Receives either direct browser data or previously stored backend data
@@ -136,8 +144,8 @@ The `backendData` parameter is crucial for the ODI pattern as it:
 - Enables deferred identification at the optimal moment (e.g., checkout)
 
 When using the `backendData` approach, identification can be split into two phases:
-1. Initial data collection and storage (via `/api/collect-fingerprint`)
-2. Completing identification (via `/api/fingerprint` with `backendData`)
+1. Initial data collection and storage (via `/api/store-fingerprint`)
+2. Completing identification (via `/api/send-fingerprint` with `backendData`)
 
 
 ## Metrics Display
@@ -189,7 +197,7 @@ if (data.agentData && fpInstance) {
 Browser data and metrics are stored in `sessionStorage` to ensure persistence across page navigation, including:
 
 - Browser data collection results
-- Collection latency
+- Browser signal collection latency
 - Backend storage latency  
 - Identification latency
 - Current processing phase
@@ -206,7 +214,7 @@ The implementation demonstrates how to use Fingerprint ODI in a real application
 
 ## Reset Functionality
 
-The application includes a [reset mechanism](app/components/FingerprintProvider.jsx#L278-L325) to:
+The application includes a [reset mechanism](app/components/FingerprintProvider.jsx#L296-L343) to:
 - Clear all cookies
 - Remove session storage data
 - Reset all state
@@ -233,6 +241,3 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
