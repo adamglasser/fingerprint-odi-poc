@@ -1,6 +1,6 @@
 # Fingerprint On-Demand Identification (ODI) Implementation
 
-This project demonstrates a practical implementation of Fingerprint's On-Demand Identification (ODI) pattern using Next.js. The implementation follows Fingerprint's recommended approach of "collect now, send later" to improve performance and control over the identification flow.
+This project demonstrates a practical implementation of Fingerprint's On-Demand Identification (ODI) pattern using Next.js. The implementation follows the ODI approach of "collect now, send later" to improve performance and increase control over the identification flow.
 
 ## Architecture Overview
 

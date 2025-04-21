@@ -1,3 +1,5 @@
+import { extractClientIP } from '../../utils/ipValidation';
+
 export async function POST(request) {
   try {
     // Get the request body
@@ -23,22 +25,8 @@ export async function POST(request) {
       // Extract the required HTTP headers from the request
       clientHeaders = Object.fromEntries(request.headers.entries());
       
-      // Extract and properly format the client IP
-      clientIP = clientHeaders['x-forwarded-for'] || request.headers.get('x-real-ip');
-      // If x-forwarded-for contains multiple IPs, take the first one (client's original IP)
-      if (clientIP && clientIP.includes(',')) {
-        clientIP = clientIP.split(',')[0].trim();
-      }
-      
-      // Use Node.js built-in net module for IP validation
-      const { isIP } = require('net');
-      
-      // Ensure we have a valid IP
-      if (!clientIP || !isIP(clientIP)) {
-        // For testing/development - use a valid public IP
-        clientIP = '8.8.8.8';
-        console.log('Using fallback IP address');
-      }
+      // Extract and validate client IP using the shared utility
+      clientIP = extractClientIP(clientHeaders);
       
       clientHost = clientHeaders['host'] || 'localhost';
       clientUserAgent = clientHeaders['user-agent'] || '';
