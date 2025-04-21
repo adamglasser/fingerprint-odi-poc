@@ -93,10 +93,8 @@ export default function FingerprintClient() {
     loadStartTime.current = null;
     loadEndTime.current = null;
     
-    sendMessageToParent('status', { message: 'reset' });
-    
-    // Reinitialize Fingerprint
-    initializeFingerprint();
+    // Signal that reset is complete
+    sendMessageToParent('status', { message: 'reset_complete' });
   };
   
   useEffect(() => {

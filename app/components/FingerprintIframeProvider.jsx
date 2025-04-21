@@ -152,6 +152,10 @@ export default function FingerprintIframeProvider({ children }) {
         case 'reset':
           setProcessingPhase('initial');
           break;
+        case 'reset_complete':
+          // Reset is complete, start a new collection
+          collectBrowserData();
+          break;
         case 'agentDataHandled':
           // Agent data has been handled, update UI if needed
           break;
@@ -235,13 +239,13 @@ export default function FingerprintIframeProvider({ children }) {
       
       // Store the backend response, but don't complete identification yet
       setBackendData(data);
-      setStorageLatency(sendLatency);
-      setBackendLatency(sendLatency); 
+      setStorageLatency(data.backendLatency);
+      setBackendLatency(sendLatency);
       setProcessingPhase('stored');
       
       // Store in sessionStorage
       try {
-        sessionStorage.setItem('fpStorageLatency', sendLatency.toString());
+        sessionStorage.setItem('fpStorageLatency', data.backendLatency.toString());
         sessionStorage.setItem('fpBackendLatency', sendLatency.toString());
         sessionStorage.setItem('fpProcessingPhase', 'stored');
       } catch (err) {
