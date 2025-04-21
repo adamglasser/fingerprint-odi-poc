@@ -68,7 +68,7 @@ Collection happens automatically when:
 **Function: [`sendToBackend()`](app/components/FingerprintProvider.jsx#L167-L200)**
 
 This function:
-- Takes the browser data and sends it to our [`/api/collect-fingerprint`](app/api/collect-fingerprint/route.js) endpoint
+- Takes the browser data and sends it to our [`/api/store-fingerprint`](app/api/store-fingerprint/route.js) endpoint
 - Measures and stores storage latency
 - Sets `processingPhase` to 'stored'
 - Stores data in `sessionStorage`
@@ -96,7 +96,7 @@ Only triggered:
 
 The implementation includes two critical API routes:
 
-### 1. [`/api/collect-fingerprint`](app/api/collect-fingerprint/route.js)
+### 1. [`/api/store-fingerprint`](app/api/store-fingerprint/route.js)
 
 This endpoint:
 - Receives browser data from the frontend
@@ -144,7 +144,7 @@ The `backendData` parameter is crucial for the ODI pattern as it:
 - Enables deferred identification at the optimal moment (e.g., checkout)
 
 When using the `backendData` approach, identification can be split into two phases:
-1. Initial data collection and storage (via `/api/collect-fingerprint`)
+1. Initial data collection and storage (via `/api/store-fingerprint`)
 2. Completing identification (via `/api/fingerprint` with `backendData`)
 
 

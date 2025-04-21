@@ -61,7 +61,6 @@ export async function POST(request) {
     };
     
     // Get API key from environment or use a placeholder
-    // In production, store this in environment variables
     const apiKey = process.env.FINGERPRINT_API_KEY || process.env.NEXT_PUBLIC_FINGERPRINT_SECRET_API_KEY;
     
     if (!apiKey) {

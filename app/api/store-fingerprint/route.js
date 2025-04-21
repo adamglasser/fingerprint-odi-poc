@@ -67,7 +67,7 @@ export async function POST(request) {
       backendLatency
     });
   } catch (error) {
-    console.error('Error collecting fingerprint data:', error);
+    console.error('Error storing fingerprint data:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 } 
